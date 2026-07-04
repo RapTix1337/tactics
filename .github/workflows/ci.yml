@@ -1,0 +1,53 @@
+# Quality gate on the product's target platform: every PR and every push to
+# main runs the full check chain on windows-latest. The E2E job and the
+# release workflow land later.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Reads the pnpm version from the packageManager field in package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # pnpm can skip Electron's postinstall binary download when the package
+      # is served from the store cache (see README) — build and packaging
+      # need the binary.
+      - name: Ensure the Electron binary is present
+        run: if (-not (Test-Path node_modules/electron/dist)) { node node_modules/electron/install.js }
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Verify boundary rules still fire
+        run: pnpm lint:boundaries
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Typecheck (node, web, neutral)
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Packaging smoke test
+        run: pnpm package:dir
