@@ -7,6 +7,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Manual runs for the ADR-034 spike evidence (20 CI runs, E4.1).
+  workflow_dispatch:
 
 jobs:
   ci:
@@ -48,6 +50,11 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # ADR-034 spike (E4.1): launches the built app via Playwright. Grows
+      # into the full thin E2E job in E20.2.
+      - name: E2E (Playwright, built app)
+        run: pnpm test:e2e
 
       - name: Packaging smoke test
         run: pnpm package:dir

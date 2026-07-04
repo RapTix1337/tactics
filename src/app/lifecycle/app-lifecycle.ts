@@ -4,6 +4,7 @@ import { app, type BrowserWindow, session } from 'electron';
 
 import { createMainWindow } from './main-window';
 import { DEV_CONTENT_SECURITY_POLICY, shouldAllowNavigation } from './security-policy';
+import { resolveUserDataDirOverride } from './user-data-override';
 
 /**
  * App lifecycle skeleton (E3.1): single-instance lock, session hardening,
@@ -11,6 +12,14 @@ import { DEV_CONTENT_SECURITY_POLICY, shouldAllowNavigation } from './security-p
  * land in E17.x.
  */
 export function startApp(): void {
+  // Must precede the single-instance lock: the lock is keyed on the
+  // user-data directory, so an overridden test instance never collides
+  // with a regular installation.
+  const userDataDirOverride = resolveUserDataDirOverride(process.env);
+  if (userDataDirOverride !== undefined) {
+    app.setPath('userData', userDataDirOverride);
+  }
+
   if (!app.requestSingleInstanceLock()) {
     app.quit();
     return;
