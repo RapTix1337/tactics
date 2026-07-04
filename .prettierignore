@@ -1,0 +1,13 @@
+# Build output and dependencies
+node_modules/
+out/
+dist/
+pnpm-lock.yaml
+
+# Hand-formatted prose (docs stay maintainer-formatted)
+*.md
+
+# Third-party session tooling
+.agents/
+.claude/
+.idea/

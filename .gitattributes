@@ -1,0 +1,4 @@
+# Normalize all text files to LF on checkout everywhere. GitHub's Windows CI
+# runners default to core.autocrlf=true; without this, checked-out files would
+# be CRLF and Prettier's LF-only formatting check would fail.
+* text=auto eol=lf

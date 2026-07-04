@@ -1,0 +1,55 @@
+{
+  "name": "tactics",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TactiCS — open-source desktop companion app for Counter-Strike 2",
+  "license": "GPL-3.0",
+  "type": "module",
+  "main": "./out/main/index.js",
+  "engines": {
+    "node": ">=24.0.0 <25.0.0"
+  },
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "prepare": "husky",
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "build": "electron-vite build",
+    "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json && tsc -p tsconfig.neutral.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:boundaries": "node scripts/verify-boundary-rules.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,yaml,yml,html,css}": "prettier --write"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.0",
+    "@commitlint/config-conventional": "^21.2.0",
+    "@types/node": "^24.0.0",
+    "electron": "43.0.0",
+    "electron-vite": "^5.0.0",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-node": "^0.3.9",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import-x": "^4.17.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-simple-import-sort": "^13.0.0",
+    "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
+    "lint-staged": "^17.0.8",
+    "prettier": "^3.9.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.1",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.9"
+  }
+}

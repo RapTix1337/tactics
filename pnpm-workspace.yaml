@@ -1,0 +1,11 @@
+# Single-package repo (ADR-026 — no workspace packages); this file only carries
+# pnpm settings, which pnpm >= 10 reads from here instead of package.json.
+
+# pnpm blocks dependency build scripts by default; postinstall scripts that
+# fetch platform binaries must be allowed explicitly: electron (app binary),
+# esbuild (Vite), unrs-resolver (eslint-plugin-import-x resolution).
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+onlyBuiltDependencies:
+  - electron

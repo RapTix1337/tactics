@@ -1,0 +1,28 @@
+# Local-only material — internal planning docs and AI-session tooling stay
+# out of the public repository (maintainer decision, Session 12)
+docs/
+CLAUDE.md
+.claude/
+.agents/
+skills-lock.json
+
+# Dependencies
+node_modules/
+
+# Build output
+out/
+dist/
+
+# Logs
+*.log
+
+# Transient lint fixtures (pnpm lint:boundaries)
+**/__boundary-fixture__*
+
+# IDE / editor
+.idea/
+.vscode/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
