@@ -1,0 +1,9 @@
+# Minimal packaging config — just enough for the CI packaging smoke test
+# (electron-builder --dir). The real installer configuration (NSIS target,
+# icons, uninstall hygiene) lands with the release-engineering epic.
+appId: io.github.raptix1337.tactics
+productName: TactiCS
+directories:
+  output: dist
+files:
+  - out/**

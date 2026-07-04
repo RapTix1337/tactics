@@ -4,7 +4,11 @@
 # pnpm blocks dependency build scripts by default; postinstall scripts that
 # fetch platform binaries must be allowed explicitly: electron (app binary),
 # esbuild (Vite), unrs-resolver (eslint-plugin-import-x resolution).
+# electron-winstaller (via electron-builder) stays false: its postinstall
+# downloads Squirrel.Windows binaries — unused, packaging targets NSIS and CI
+# only runs the unpacked --dir smoke test.
 allowBuilds:
+  electron-winstaller: false
   esbuild: true
   unrs-resolver: true
 onlyBuiltDependencies:
