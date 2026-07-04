@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 
+import react from '@vitejs/plugin-react';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import type { Plugin } from 'vite';
 
@@ -62,7 +63,7 @@ export default defineConfig({
   },
   renderer: {
     root: 'src/ui',
-    plugins: [injectProductionCsp()],
+    plugins: [react(), injectProductionCsp()],
     build: {
       rollupOptions: {
         input: {
