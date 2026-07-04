@@ -106,6 +106,7 @@ pnpm dev          # start the app in dev mode with HMR (window opens via WSLg)
 pnpm build        # bundle main/preload/renderer into out/
 pnpm typecheck    # type-check the three TS contexts (node / web / neutral)
 pnpm test         # Vitest unit/integration tests, node + jsdom (watch: pnpm test:watch)
+pnpm test:e2e     # Playwright E2E against the built app (run pnpm build first)
 pnpm lint         # ESLint incl. module-boundary rules
 pnpm lint:boundaries  # prove every boundary rule still fires
 pnpm format:check # Prettier check (format with: pnpm format)
