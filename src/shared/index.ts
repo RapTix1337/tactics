@@ -7,3 +7,4 @@ export * from './envelope';
 export * from './error-codes';
 export * from './events';
 export * from './logger';
+export * from './settings';

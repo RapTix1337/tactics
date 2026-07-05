@@ -11,3 +11,6 @@ pnpm-lock.yaml
 .agents/
 .claude/
 .idea/
+
+# drizzle-kit output — generated, inert data (ADR-040); regeneration must not fight the formatter
+src/modules/storage/migrations/
