@@ -19,6 +19,8 @@ export const ERROR_CODES = [
   'INVALID_PATH',
   /** A storage operation failed (ADR-023/029). */
   'DB_ERROR',
+  /** The log export could not be written to the chosen location (PRV-04). */
+  'EXPORT_FAILED',
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];

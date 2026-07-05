@@ -49,8 +49,9 @@ export function defineEvent<TDomain extends string, TPayloadSchema extends z.Zod
   return { domain, channel: `evt:${domain}.changed`, payloadSchema };
 }
 
-type AnyCommandDefinition = CommandDefinition<CommandName, z.ZodType, z.ZodType>;
-type AnyEventDefinition = EventDefinition<string, z.ZodType>;
+/** Constraint aliases for infrastructure generic over the whole contract (app/ipc, preload). */
+export type AnyCommandDefinition = CommandDefinition<CommandName, z.ZodType, z.ZodType>;
+export type AnyEventDefinition = EventDefinition<string, z.ZodType>;
 
 export type CommandRequest<TDef extends AnyCommandDefinition> = z.infer<TDef['requestSchema']>;
 export type CommandResponse<TDef extends AnyCommandDefinition> = z.infer<TDef['responseSchema']>;
