@@ -76,11 +76,32 @@ support can follow.
 
 ## Development Setup
 
-TactiCS is developed inside **WSL2 (Ubuntu 22.04) with WSLg**; Electron
-windows render through WSLg. A Windows-native toolchain is not required —
-Windows behavior of the packaged app is covered by CI on `windows-latest`.
+TactiCS targets **Windows first** (ADR-004), so Windows-native development is
+the primary path. Development inside **WSL2 (Ubuntu 22.04) with WSLg** is also
+supported — Windows behavior of the packaged app is covered by CI on
+`windows-latest` regardless of the dev host. Pick the environment that matches
+your machine below; the `pnpm` scripts under
+[Working with the repo](#working-with-the-repo) are identical for both.
 
-Toolchain prerequisites:
+### Windows-native
+
+| Tool | Version | Install |
+|---|---|---|
+| [nvm-windows](https://github.com/coreybutler/nvm-windows) | latest | installer from the nvm-windows releases |
+| Node.js | 24.x — the major bundled by Electron 43 | `nvm install 24` then `nvm use 24` |
+| pnpm | 11.x, corepack-managed | `corepack enable` then `corepack prepare pnpm@11.9.0 --activate` |
+| Visual Studio Build Tools (C++) + Python 3 | latest | **only** if a native module has to compile from source; `pnpm install` uses `better-sqlite3` prebuilt binaries, so no compiler is needed for a normal install |
+
+Windows notes:
+
+- Run the setup commands in the same shell (PowerShell) whose `PATH` `git`
+  inherits, so the husky hooks can find `pnpm` (see
+  [docs/11-contributing.md](docs/11-contributing.md)).
+- Native rebuilds against the Electron ABI (if ever triggered) need the
+  Visual Studio "Desktop development with C++" workload plus Python 3 for
+  node-gyp.
+
+### WSL2 (Ubuntu 22.04) with WSLg
 
 | Tool | Version | Install |
 |---|---|---|
@@ -92,8 +113,12 @@ Toolchain prerequisites:
 
 WSL notes:
 
+- Electron windows render through WSLg.
 - Electron under WSLg logs benign `Failed to connect to the bus` (D-Bus)
   errors on startup; windows open regardless.
+
+### Shared notes
+
 - pnpm ≥ 10 blocks dependency postinstall scripts by default. The build
   scripts of `electron` and `esbuild` are pre-approved in
   `pnpm-workspace.yaml`.
@@ -102,7 +127,7 @@ WSL notes:
 
 ```
 pnpm install      # install dependencies + git hooks (Node 24 + pnpm 11, see above)
-pnpm dev          # start the app in dev mode with HMR (window opens via WSLg)
+pnpm dev          # start the app in dev mode with HMR (opens the app window)
 pnpm build        # bundle main/preload/renderer into out/
 pnpm typecheck    # type-check the three TS contexts (node / web / neutral)
 pnpm test         # Vitest unit/integration tests, node + jsdom (watch: pnpm test:watch)
