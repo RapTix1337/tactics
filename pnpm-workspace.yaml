@@ -4,13 +4,15 @@
 # pnpm blocks dependency build scripts by default; postinstall scripts that
 # fetch platform binaries must be allowed explicitly: electron (app binary),
 # esbuild (Vite), unrs-resolver (eslint-plugin-import-x resolution),
-# better-sqlite3 (native SQLite build against the dev Node ABI — E7.2;
-# electron-builder rebuilds it against the Electron ABI at package time).
+# better-sqlite3 (native SQLite build — E7.2/E8.3; the git-pinned source
+# needs its own exact-spec entry, scripts/ensure-native-abi.mjs switches
+# the binary between the Node and Electron ABI).
 # electron-winstaller (via electron-builder) stays false: its postinstall
 # downloads Squirrel.Windows binaries — unused, packaging targets NSIS and CI
 # only runs the unpacked --dir smoke test.
 allowBuilds:
   better-sqlite3: true
+  better-sqlite3@https://codeload.github.com/WiseLibs/better-sqlite3/tar.gz/b5701cb5483d97825778947cb904630c2c2e821e: true
   electron-winstaller: false
   esbuild: true
   unrs-resolver: true
