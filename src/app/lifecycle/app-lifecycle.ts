@@ -1,7 +1,13 @@
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { app, type BrowserWindow, session } from 'electron';
 
+import { createLogger, initializeLogging, resolveLogLevel } from '../../modules/logging';
+import { registerAppCommands } from '../ipc/app-commands';
+import { createElectronCommandDeps, createElectronLogsDeps } from '../ipc/electron-ipc';
+import { registerLogsCommands } from '../ipc/logs-commands';
+import { installMainErrorCapture } from './error-capture';
 import { createMainWindow } from './main-window';
 import { DEV_CONTENT_SECURITY_POLICY, shouldAllowNavigation } from './security-policy';
 import { resolveUserDataDirOverride } from './user-data-override';
@@ -28,6 +34,19 @@ export function startApp(): void {
   // Set by electron-vite in dev mode; absent in the packaged app.
   const devServerUrl = process.env['ELECTRON_RENDERER_URL'];
   const devServerOrigin = devServerUrl === undefined ? undefined : new URL(devServerUrl).origin;
+
+  // After the user-data override so the log directory follows it (ADR-030:
+  // file target <userData>/logs, console in dev only).
+  initializeLogging({
+    logDirectory: join(app.getPath('userData'), 'logs'),
+    level: resolveLogLevel(process.argv, process.env),
+    enableConsole: devServerUrl !== undefined,
+  });
+  const logger = createLogger('app');
+
+  // Last-resort handlers, installed as early as logging permits (§8.3);
+  // the sliver before initializeLogging keeps the default fatal handling.
+  installMainErrorCapture(process, createLogger('main'));
 
   // Defense in depth beyond the per-window `sandbox: true`: force the
   // sandbox for every process (ADR-025). Must be called before app ready.
@@ -57,6 +76,11 @@ export function startApp(): void {
   });
 
   void app.whenReady().then(() => {
+    // Registered before any window exists, so no invoke can precede them.
+    const commandDeps = createElectronCommandDeps(createLogger('ipc'));
+    registerAppCommands(commandDeps, createLogger('renderer'));
+    registerLogsCommands(commandDeps, createElectronLogsDeps());
+
     hardenSession(devServerUrl !== undefined);
 
     mainWindow = createMainWindow({
@@ -67,6 +91,9 @@ export function startApp(): void {
     mainWindow.on('closed', () => {
       mainWindow = null;
     });
+
+    // Lifecycle milestone (03-technical-design.md §8.1).
+    logger.info('App started', { version: app.getVersion() });
   });
 
   // Close means quit until close-to-tray arrives (E17.1).

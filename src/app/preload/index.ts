@@ -1,10 +1,19 @@
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 
-import { APP_NAME } from '../../shared';
+import type { ContractCommandDefinitions } from '../../shared/commands';
+import { COMMAND_NAMES, EVENT_DOMAINS } from '../../shared/contract-names';
+import type { ContractEventDefinitions } from '../../shared/events';
+import { createBridge } from './bridge';
 
-// Placeholder bridge proving the preload bundle loads (E1.1). The real typed
-// IPC bridge — invoke/subscribe over the shared contract — lands in E5.x
-// (ADR-022/032); no ad-hoc channels are added here.
-contextBridge.exposeInMainWorld('tactics', {
-  appName: APP_NAME,
-});
+// The single door between renderer and main (ADR-022/025): exactly the two
+// contract-typed functions, nothing else. Imports are subpath + type-only on
+// purpose — the shared barrel would inline zod into the sandboxed preload
+// bundle (E5.1 watch item); the schemas stay main-only.
+contextBridge.exposeInMainWorld(
+  'tactics',
+  createBridge<ContractCommandDefinitions, ContractEventDefinitions>(
+    ipcRenderer,
+    COMMAND_NAMES,
+    EVENT_DOMAINS,
+  ),
+);
