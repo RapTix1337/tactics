@@ -1,20 +1,22 @@
 import { useAppStore } from '../../stores/app-store';
+import { useSettingsStore } from '../../stores/settings-store';
 import type { IpcWiring } from './bootstrap';
 
 /**
  * The production wiring — the ONLY place mirror stores are written
  * (ADR-033). Feature tasks extend it: each event subscription lands here
- * together with its store slice (settings E8.3, gameState E10.7,
- * updates E18.1).
+ * together with its store slice (gameState E10.7, updates E18.1).
  */
 export const ipcWiring: IpcWiring = {
-  subscribeAll: (): void => {
-    // No contract events exist yet (EVENT_DOMAINS is empty); the first
-    // subscription lands with evt:settings.changed (E8.3).
+  subscribeAll: (bridge): void => {
+    bridge.subscribe('settings', (settings) => {
+      useSettingsStore.setState({ settings });
+    });
   },
-  applySnapshot: (): void => {
-    // The snapshot carries no slices yet (E8.3/E10.7/E18.1) — reaching
-    // this point is the successful round trip.
+  applySnapshot: (snapshot): void => {
+    // Full slices, so the snapshot may overwrite an earlier event and a
+    // later event wins again — both orders converge (04-data-flow.md §4).
+    useSettingsStore.setState({ settings: snapshot.settings });
     useAppStore.setState({ ipcStatus: 'ready', lastError: undefined });
   },
   onError: (message): void => {

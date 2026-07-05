@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Logger } from '../../shared';
+import type { Logger, Settings } from '../../shared';
 import { appGetSnapshot, appReportRendererError } from '../../shared';
 import { registerAppCommands } from './app-commands';
 import type { CommandRegistrationDeps } from './register-command';
@@ -10,6 +10,15 @@ const silentLogger: Logger = {
   warn: () => undefined,
   info: () => undefined,
   debug: () => undefined,
+};
+
+const snapshotSettings: Settings = {
+  theme: 'system',
+  cs2Path: null,
+  gsiPort: 42731,
+  autostart: false,
+  closeToTray: true,
+  autoUpdate: true,
 };
 
 interface FakeEvent {
@@ -32,13 +41,17 @@ function setup(): {
   };
   const rendererError = vi.fn();
 
-  registerAppCommands(deps, { ...silentLogger, error: rendererError });
+  registerAppCommands(
+    deps,
+    { ...silentLogger, error: rendererError },
+    { getSettings: () => snapshotSettings },
+  );
 
   return { handlers, rendererError };
 }
 
 describe('registerAppCommands', () => {
-  it('registers app.getSnapshot answering with the empty snapshot envelope', async () => {
+  it('registers app.getSnapshot answering with the current settings slice', async () => {
     const { handlers } = setup();
 
     const listener = handlers.get(appGetSnapshot.channel);
@@ -46,7 +59,7 @@ describe('registerAppCommands', () => {
     // z.void() request: the renderer invokes with undefined.
     await expect(listener?.({ trusted: true }, undefined)).resolves.toEqual({
       ok: true,
-      data: {},
+      data: { settings: snapshotSettings },
     });
   });
 

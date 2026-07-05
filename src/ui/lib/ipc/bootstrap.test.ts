@@ -7,8 +7,21 @@ import { bootstrapIpc } from './bootstrap';
 
 type SnapshotResult = CommandResult<AppSnapshot>;
 
+const snapshot: AppSnapshot = {
+  settings: {
+    theme: 'dark',
+    cs2Path: null,
+    gsiPort: null,
+    autostart: false,
+    closeToTray: true,
+    autoUpdate: true,
+  },
+};
+
 const neverSubscribe = (): never => {
-  throw new Error('no contract events exist yet');
+  // The bootstrap never touches the bridge's subscribe itself — event
+  // subscriptions are the wiring's job, faked in these tests.
+  throw new Error('bootstrap must not subscribe directly');
 };
 
 function createFakeBridge(invoke: () => Promise<SnapshotResult>): TacticsBridge {
@@ -44,14 +57,14 @@ describe('bootstrapIpc', () => {
     const order: string[] = [];
     const bridge = createFakeBridge(() => {
       order.push('invoke');
-      return Promise.resolve({ ok: true, data: {} });
+      return Promise.resolve({ ok: true, data: snapshot });
     });
     const wiring = createRecordingWiring((step) => order.push(step));
 
     await bootstrapIpc(bridge, wiring);
 
     expect(order).toEqual(['subscribeAll', 'invoke', 'applySnapshot']);
-    expect(wiring.snapshots).toEqual([{}]);
+    expect(wiring.snapshots).toEqual([snapshot]);
     expect(wiring.errors).toEqual([]);
   });
 
@@ -83,7 +96,7 @@ describe('bootstrapIpc', () => {
     emitEvent(); // event arrives while the snapshot is still in flight
     expect(state).toBe('from-event');
 
-    resolveSnapshot({ ok: true, data: {} });
+    resolveSnapshot({ ok: true, data: snapshot });
     await bootstrap;
     expect(state).toBe('from-snapshot'); // snapshot overwrites
 

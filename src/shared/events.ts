@@ -1,9 +1,19 @@
-import type { AnyEventDefinition } from './contract';
+import { defineEvent } from './contract';
+import { settingsSchema } from './settings';
+
+/**
+ * `evt:settings.changed` (03-technical-design.md §5.4): always the full new
+ * settings state, published by main after every successful mutation
+ * (`settings.update`; `steam.pickCs2Path` joins with E9.3).
+ */
+export const settingsChanged = defineEvent('settings', settingsSchema);
 
 /**
  * The contract's event definitions, keyed by domain — the counterpart of
- * `ContractCommandDefinitions`. Empty until the first event lands with its
- * owning task (settings E8.3, gameState E10.7, updates E18.1); each entry
- * pairs a domain with its `defineEvent` definition.
+ * `ContractCommandDefinitions`. Grows with the owning tasks (gameState
+ * E10.7, updates E18.1); each entry pairs a domain with its `defineEvent`
+ * definition.
  */
-export type ContractEventDefinitions = Record<never, AnyEventDefinition>;
+export interface ContractEventDefinitions {
+  settings: typeof settingsChanged;
+}

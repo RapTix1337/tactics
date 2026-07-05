@@ -56,6 +56,10 @@ test('built app starts with a separate user-data dir and renders the app root', 
     await expect(window.getByTestId('ipc-status')).toHaveText('IPC: ready');
     await window.reload();
     await expect(window.getByTestId('ipc-status')).toHaveText('IPC: ready');
+
+    // E8.3: storage is wired at startup — a ready snapshot implies the
+    // database was opened and migrated in the overridden user-data dir.
+    expect(existsSync(join(userDataDir, 'tactics.db'))).toBe(true);
   } finally {
     await close();
   }

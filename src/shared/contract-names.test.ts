@@ -1,9 +1,16 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { ContractCommandDefinitions } from './commands';
-import { appGetSnapshot, appReportRendererError, logsExport, logsOpenDirectory } from './commands';
+import {
+  appGetSnapshot,
+  appReportRendererError,
+  logsExport,
+  logsOpenDirectory,
+  settingsUpdate,
+} from './commands';
 import { COMMAND_NAMES, EVENT_DOMAINS } from './contract-names';
 import type { ContractEventDefinitions } from './events';
+import { settingsChanged } from './events';
 
 describe('contract name lists', () => {
   it('lists exactly the defined commands (both directions, type level)', () => {
@@ -15,6 +22,7 @@ describe('contract name lists', () => {
     expect(COMMAND_NAMES).toContain(appReportRendererError.name);
     expect(COMMAND_NAMES).toContain(logsOpenDirectory.name);
     expect(COMMAND_NAMES).toContain(logsExport.name);
+    expect(COMMAND_NAMES).toContain(settingsUpdate.name);
     expect(new Set(COMMAND_NAMES).size).toBe(COMMAND_NAMES.length);
   });
 
@@ -29,7 +37,8 @@ describe('contract name lists', () => {
   it('lists exactly the defined event domains (type level)', () => {
     expectTypeOf<(typeof EVENT_DOMAINS)[number]>().toEqualTypeOf<keyof ContractEventDefinitions>();
 
-    // Events land with their owning tasks (E8.3, E10.7, E18.1).
-    expect(EVENT_DOMAINS).toHaveLength(0);
+    // Further events land with their owning tasks (gameState E10.7, updates E18.1).
+    expect(EVENT_DOMAINS).toContain(settingsChanged.domain);
+    expect(new Set(EVENT_DOMAINS).size).toBe(EVENT_DOMAINS.length);
   });
 });

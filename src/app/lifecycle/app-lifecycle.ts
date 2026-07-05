@@ -4,9 +4,19 @@ import { fileURLToPath } from 'node:url';
 import { app, type BrowserWindow, session } from 'electron';
 
 import { createLogger, initializeLogging, resolveLogLevel } from '../../modules/logging';
+import { createSettingsRepository } from '../../modules/settings';
+import type { StorageDatabase } from '../../modules/storage';
+import { openDatabase } from '../../modules/storage';
 import { registerAppCommands } from '../ipc/app-commands';
-import { createElectronCommandDeps, createElectronLogsDeps } from '../ipc/electron-ipc';
+import {
+  createAppEventPublisher,
+  createElectronCommandDeps,
+  createElectronLogsDeps,
+} from '../ipc/electron-ipc';
 import { registerLogsCommands } from '../ipc/logs-commands';
+import { describeError } from '../ipc/register-command';
+import { registerSettingsCommands } from '../ipc/settings-commands';
+import { loadBundledMigrations } from '../wiring/bundled-migrations';
 import { installMainErrorCapture } from './error-capture';
 import { createMainWindow } from './main-window';
 import { DEV_CONTENT_SECURITY_POLICY, shouldAllowNavigation } from './security-policy';
@@ -76,10 +86,43 @@ export function startApp(): void {
   });
 
   void app.whenReady().then(() => {
+    // Storage first (ADR-023): the single database opens and migrates before
+    // any command that could touch it is registered. Open failures are
+    // environment-level (corruption is recovered inside openDatabase) and a
+    // downgrade must never touch the data — without storage the app cannot
+    // run, so both quit deliberately instead of limping on.
+    let database: StorageDatabase | undefined;
+    try {
+      database = openDatabase(
+        join(app.getPath('userData'), 'tactics.db'),
+        createLogger('storage'),
+      ).database;
+      database.migrate(loadBundledMigrations());
+    } catch (error) {
+      logger.error('Storage initialization failed — quitting', { error: describeError(error) });
+      // A migration refusal (e.g. SchemaDowngradeError) leaves an open
+      // handle on a database that must stay untouched — close it cleanly.
+      database?.close();
+      app.quit();
+      return;
+    }
+    const storage = database;
+    app.on('will-quit', () => {
+      storage.close();
+    });
+    const settingsRepository = createSettingsRepository(storage, createLogger('settings'));
+    const eventPublisher = createAppEventPublisher();
+
     // Registered before any window exists, so no invoke can precede them.
     const commandDeps = createElectronCommandDeps(createLogger('ipc'));
-    registerAppCommands(commandDeps, createLogger('renderer'));
+    registerAppCommands(commandDeps, createLogger('renderer'), {
+      getSettings: () => settingsRepository.getSettings(),
+    });
     registerLogsCommands(commandDeps, createElectronLogsDeps());
+    registerSettingsCommands(commandDeps, {
+      updateSettings: (partial) => settingsRepository.updateSettings(partial),
+      publisher: eventPublisher,
+    });
 
     hardenSession(devServerUrl !== undefined);
 

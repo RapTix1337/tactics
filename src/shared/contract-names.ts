@@ -14,6 +14,9 @@ export const COMMAND_NAMES = [
   'app.reportRendererError',
   'logs.openDirectory',
   'logs.export',
+  'settings.update',
 ] as const satisfies readonly (keyof ContractCommandDefinitions)[];
 
-export const EVENT_DOMAINS = [] as const satisfies readonly (keyof ContractEventDefinitions)[];
+export const EVENT_DOMAINS = [
+  'settings',
+] as const satisfies readonly (keyof ContractEventDefinitions)[];

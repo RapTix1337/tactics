@@ -2,7 +2,9 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2023"],
-    "types": ["node"]
+    // vite/client types import.meta.glob (bundled-migrations.ts) — the main
+    // bundle is built by Vite via electron-vite, so the API is real there.
+    "types": ["node", "vite/client"]
   },
   "include": [
     "src/app/**/*",

@@ -1,13 +1,30 @@
 import { z } from 'zod';
 
 import { defineCommand } from './contract';
+import { settingsSchema, settingsUpdateSchema } from './settings';
 
 /**
- * `app.getSnapshot` (ADR-022): the renderer's state bootstrap. Skeleton —
- * the response object gains one slice per mirror store with its owning task
- * (settings E8.3, gameState E10.7, updates E18.1).
+ * `app.getSnapshot` (ADR-022): the renderer's state bootstrap. The response
+ * object gains one slice per mirror store with its owning task (settings
+ * E8.3, gameState E10.7, updates E18.1).
  */
-export const appGetSnapshot = defineCommand('app.getSnapshot', z.void(), z.object({}));
+export const appGetSnapshot = defineCommand(
+  'app.getSnapshot',
+  z.void(),
+  z.object({ settings: settingsSchema }),
+);
+
+/**
+ * `settings.update` (03-technical-design.md §5.3, 01-requirements.md §9):
+ * partial in, validated and persisted in main, full new state back. The same
+ * full slice is published as `evt:settings.changed` — the response exists
+ * for the caller's error handling, stores are fed by the event (ADR-033).
+ */
+export const settingsUpdate = defineCommand(
+  'settings.update',
+  settingsUpdateSchema,
+  settingsSchema,
+);
 
 /**
  * `app.reportRendererError` (03-technical-design.md §5.3/§8.3, PRV-04): the
@@ -58,4 +75,5 @@ export interface ContractCommandDefinitions {
   'app.reportRendererError': typeof appReportRendererError;
   'logs.openDirectory': typeof logsOpenDirectory;
   'logs.export': typeof logsExport;
+  'settings.update': typeof settingsUpdate;
 }
