@@ -126,6 +126,10 @@ test('a fresh start shows the unconfigured GSI status with its diagnostic', asyn
   try {
     const window = await firstWindow(electronApp);
 
+    // The auto-opened offer aria-hides the badge behind it, so settle the
+    // offer first; whether it opened is itself scenario evidence below.
+    const offerAutoOpened = await dismissSetupOfferIfOpen(window);
+
     const gsiBadge = window.getByRole('status', { name: 'GSI connection status' });
     await expect(gsiBadge).not.toHaveText('');
     const badgeText = await gsiBadge.innerText();
@@ -134,12 +138,13 @@ test('a fresh start shows the unconfigured GSI status with its diagnostic', asyn
       expect(badgeText).toContain('Not set up');
     }
     if (badgeText.includes('Not set up')) {
-      await expect(gsiBadge).toContainText('Game State Integration is not set up yet.');
       // The first-start offer auto-opened exactly for this status (E15.2);
-      // dismissed, setup stays one click away in the sidebar panel.
-      await window.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
+      // dismissed above, setup stays one click away in the sidebar panel.
+      expect(offerAutoOpened).toBe(true);
+      await expect(gsiBadge).toContainText('Game State Integration is not set up yet.');
       await expect(window.getByRole('button', { name: 'Set up now' })).toBeVisible();
     } else {
+      expect(offerAutoOpened).toBe(false);
       await expect(gsiBadge).toContainText('Repair needed');
       await expect(gsiBadge).toContainText('The GSI config file is missing or outdated.');
       await expect(window.getByRole('button', { name: 'Repair now' })).toBeVisible();

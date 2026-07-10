@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { dismissSetupOfferIfOpen } from './dismiss-setup-offer';
 import { launchBuiltApp } from './launch-built-app';
 
 // E17.1 acceptance evidence for the parts a real app can show headlessly:
@@ -40,7 +41,10 @@ test('close hides to tray and a reopen restores a working window', async () => {
     await expect(reopened.getByTestId('app-root')).toBeVisible();
 
     // The recreated renderer re-ran the snapshot bootstrap (E5.4): the GSI
-    // status badge only renders text once the snapshot arrived.
+    // status badge only renders text once the snapshot arrived. The recreated
+    // renderer also re-decides the first-start offer, which would aria-hide
+    // the badge — settle it first.
+    await dismissSetupOfferIfOpen(reopened);
     const gsiBadge = reopened.getByRole('status', { name: 'GSI connection status' });
     await expect(gsiBadge).not.toHaveText('');
   } finally {
