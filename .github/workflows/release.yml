@@ -1,0 +1,79 @@
+# Release on tag `v*` (ADR-035, E19.3): the full quality gate re-runs on the
+# tagged commit (maintainer decision — releases are rare, a broken one is
+# expensive), then electron-builder uploads the NSIS installer plus the
+# electron-updater metadata (latest.yml) to a *draft* GitHub release for
+# manual maintainer publishing (REL-01/03, unsigned per ADR-017).
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  # The GITHUB_TOKEN must be allowed to create the draft release.
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Reads the pnpm version from the packageManager field in package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # pnpm can skip Electron's postinstall binary download when the package
+      # is served from the store cache (see README) — build and packaging
+      # need the binary.
+      - name: Ensure the Electron binary is present
+        run: if (-not (Test-Path node_modules/electron/dist)) { node node_modules/electron/install.js }
+
+      # Fail fast on the classic updater-metadata mistake: an installer whose
+      # embedded version does not match the tag it was released under. The tag
+      # reaches the script via env, never by template interpolation.
+      - name: Verify the tag matches the package version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          $version = node -p "require('./package.json').version"
+          if ($env:TAG -ne "v$version") {
+            Write-Error "Tag '$env:TAG' does not match package.json version 'v$version'."
+            exit 1
+          }
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Verify boundary rules still fire
+        run: pnpm lint:boundaries
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Typecheck (node, web, neutral)
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: E2E (Playwright, built app)
+        run: pnpm test:e2e
+
+      # Builds the NSIS installer and uploads installer, blockmap, and
+      # latest.yml to a draft release named after the version (created if
+      # missing). Publishing the draft is the maintainer's manual step.
+      - name: Package and publish draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm exec electron-builder --publish always

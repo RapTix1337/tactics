@@ -15,6 +15,16 @@ files:
 extraResources:
   - from: data/maps
     to: data/maps
+# Auto-update feed and release upload target (ADR-027/035, E19.3). This block
+# is baked into the packaged app as `app-update.yml` — the electron-updater
+# GitHub provider reads it there — and tells the release workflow where to
+# upload installer + latest.yml. Drafts stay invisible to the updater until
+# the maintainer publishes them manually (REL-01).
+publish:
+  provider: github
+  owner: RapTix1337
+  repo: tactics
+  releaseType: draft
 win:
   target: nsis
   # Placeholder art for 1.0 (ADR-047, resolves open question #9).
