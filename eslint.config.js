@@ -67,9 +67,11 @@ export default defineConfig(
     },
   },
 
-  // Root config files and scripts: linted without type information.
+  // Root config files, scripts, and E2E tests: linted without type
+  // information (tests/e2e joined in E20.1 so helpers can annotate
+  // parameters; typecheck coverage comes from tsconfig.node.json).
   {
-    files: ['*.ts', '*.js', '*.mjs', 'scripts/**/*.mjs'],
+    files: ['*.ts', '*.js', '*.mjs', 'scripts/**/*.mjs', 'tests/**/*.ts'],
     extends: [tseslint.configs.recommended],
   },
 

@@ -1,6 +1,6 @@
 # Quality gate on the product's target platform: every PR and every push to
-# main runs the full check chain on windows-latest. The E2E job and the
-# release workflow land later.
+# main runs the full check chain on windows-latest. The release workflow is
+# separate (E19.3).
 name: ci
 
 on:
@@ -51,8 +51,9 @@ jobs:
       - name: Build
         run: pnpm build
 
-      # ADR-034 spike (E4.1): launches the built app via Playwright. Grows
-      # into the full thin E2E job in E20.2.
+      # The release-blocking E2E suite (E20.2, 10-testing.md §1.3): the thin
+      # smoke scenarios against the built app via Playwright, in test mode
+      # (E20.1). Runs in this job so it reuses the Build step's output.
       - name: E2E (Playwright, built app)
         run: pnpm test:e2e
 

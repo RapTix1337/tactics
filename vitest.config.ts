@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
@@ -19,6 +21,12 @@ export default defineConfig({
       },
       {
         plugins: [react()],
+        resolve: {
+          // shadcn/ui alias (tsconfig.web.json `paths`, components.json).
+          alias: {
+            '@': resolve(import.meta.dirname, 'src/ui'),
+          },
+        },
         test: {
           name: 'ui',
           environment: 'jsdom',

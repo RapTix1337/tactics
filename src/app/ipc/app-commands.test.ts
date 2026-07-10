@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Logger, Settings } from '../../shared';
-import { appGetSnapshot, appReportRendererError } from '../../shared';
+import type { GameState, Logger, Settings, UpdateState } from '../../shared';
+import { appGetSnapshot, appOpenExternal, appReportRendererError } from '../../shared';
 import { registerAppCommands } from './app-commands';
 import type { CommandRegistrationDeps } from './register-command';
 
@@ -21,6 +21,17 @@ const snapshotSettings: Settings = {
   autoUpdate: true,
 };
 
+const snapshotGameState: GameState = {
+  status: 'connected',
+  map: { kind: 'resolved', mapId: 'de_dust2' },
+};
+
+const snapshotUpdateState: UpdateState = {
+  status: 'ready',
+  version: '1.2.3',
+  errorKind: null,
+};
+
 interface FakeEvent {
   trusted: boolean;
 }
@@ -30,6 +41,7 @@ type RegisteredListener = (event: FakeEvent, request: unknown) => Promise<unknow
 function setup(): {
   handlers: Map<string, RegisteredListener>;
   rendererError: ReturnType<typeof vi.fn>;
+  openExternal: ReturnType<typeof vi.fn>;
 } {
   const handlers = new Map<string, RegisteredListener>();
   const deps: CommandRegistrationDeps<FakeEvent> = {
@@ -40,18 +52,24 @@ function setup(): {
     logger: silentLogger,
   };
   const rendererError = vi.fn();
+  const openExternal = vi.fn().mockResolvedValue(undefined);
 
   registerAppCommands(
     deps,
     { ...silentLogger, error: rendererError },
-    { getSettings: () => snapshotSettings },
+    {
+      getGameState: () => snapshotGameState,
+      getSettings: () => snapshotSettings,
+      getUpdateState: () => snapshotUpdateState,
+    },
+    { openExternal },
   );
 
-  return { handlers, rendererError };
+  return { handlers, rendererError, openExternal };
 }
 
 describe('registerAppCommands', () => {
-  it('registers app.getSnapshot answering with the current settings slice', async () => {
+  it('registers app.getSnapshot answering with the current mirror slices', async () => {
     const { handlers } = setup();
 
     const listener = handlers.get(appGetSnapshot.channel);
@@ -59,7 +77,11 @@ describe('registerAppCommands', () => {
     // z.void() request: the renderer invokes with undefined.
     await expect(listener?.({ trusted: true }, undefined)).resolves.toEqual({
       ok: true,
-      data: { settings: snapshotSettings },
+      data: {
+        gameState: snapshotGameState,
+        settings: snapshotSettings,
+        updateState: snapshotUpdateState,
+      },
     });
   });
 
@@ -87,5 +109,45 @@ describe('registerAppCommands', () => {
     await handlers.get(appReportRendererError.channel)?.({ trusted: true }, { message: 'boom' });
 
     expect(rendererError).toHaveBeenCalledWith('boom', {});
+  });
+
+  it('opens an allowlisted URL in the default browser (app.openExternal)', async () => {
+    const { handlers, openExternal } = setup();
+
+    const listener = handlers.get(appOpenExternal.channel);
+    expect(listener).toBeDefined();
+    await expect(
+      listener?.({ trusted: true }, { url: 'https://github.com/RapTix1337/tactics' }),
+    ).resolves.toEqual({ ok: true, data: undefined });
+
+    expect(openExternal).toHaveBeenCalledWith('https://github.com/RapTix1337/tactics');
+  });
+
+  it('rejects a non-allowlisted URL at the boundary without touching the shell', async () => {
+    const { handlers, openExternal } = setup();
+
+    await expect(
+      handlers.get(appOpenExternal.channel)?.({ trusted: true }, { url: 'https://example.com' }),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'INVALID_REQUEST', message: 'Invalid request for app.openExternal.' },
+    });
+
+    expect(openExternal).not.toHaveBeenCalled();
+  });
+
+  it('answers INTERNAL when the OS handoff rejects', async () => {
+    const { handlers, openExternal } = setup();
+    openExternal.mockRejectedValue(new Error('no browser registered'));
+
+    await expect(
+      handlers.get(appOpenExternal.channel)?.(
+        { trusted: true },
+        { url: 'https://readtldr.gg/simpleradar' },
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'INTERNAL', message: 'Could not open the link in the default browser.' },
+    });
   });
 });

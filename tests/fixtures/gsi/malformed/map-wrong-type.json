@@ -1,0 +1,10 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14042,
+    "steamid": "76561190000000000",
+    "timestamp": 1751700000
+  },
+  "map": "de_dust2"
+}

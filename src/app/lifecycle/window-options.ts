@@ -1,4 +1,4 @@
-import type { BrowserWindowConstructorOptions } from 'electron';
+import type { BrowserWindowConstructorOptions, Rectangle } from 'electron';
 
 import { APP_NAME } from '../../shared';
 
@@ -13,12 +13,18 @@ export const DEFAULT_WINDOW_HEIGHT = 800;
  * Main-window construction options with the full ADR-025 hardening.
  * Kept as a pure builder so the security flags are unit-testable without
  * launching Electron (E3.1 acceptance criterion); real-app evidence is the
- * E2E spike's job (E4.1).
+ * E2E spike's job (E4.1). `initialBounds` (E17.3) replaces the default
+ * placement with the restored one — already clamped by the caller.
  */
-export function buildMainWindowOptions(preloadPath: string): BrowserWindowConstructorOptions {
+export function buildMainWindowOptions(
+  preloadPath: string,
+  initialBounds?: Rectangle,
+): BrowserWindowConstructorOptions {
   return {
-    width: DEFAULT_WINDOW_WIDTH,
-    height: DEFAULT_WINDOW_HEIGHT,
+    width: initialBounds?.width ?? DEFAULT_WINDOW_WIDTH,
+    height: initialBounds?.height ?? DEFAULT_WINDOW_HEIGHT,
+    // x and y only as a pair — Electron centers the window otherwise.
+    ...(initialBounds === undefined ? {} : { x: initialBounds.x, y: initialBounds.y }),
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,
     title: APP_NAME,

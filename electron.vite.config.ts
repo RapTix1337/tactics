@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import type { Plugin } from 'vite';
@@ -63,7 +64,13 @@ export default defineConfig({
   },
   renderer: {
     root: 'src/ui',
-    plugins: [react(), injectProductionCsp()],
+    resolve: {
+      // shadcn/ui alias (tsconfig.web.json `paths`, components.json).
+      alias: {
+        '@': resolve(import.meta.dirname, 'src/ui'),
+      },
+    },
+    plugins: [react(), tailwindcss(), injectProductionCsp()],
     build: {
       rollupOptions: {
         input: {

@@ -8,6 +8,7 @@ import { bootstrapIpc } from './bootstrap';
 type SnapshotResult = CommandResult<AppSnapshot>;
 
 const snapshot: AppSnapshot = {
+  gameState: { status: 'waiting', map: { kind: 'none' } },
   settings: {
     theme: 'dark',
     cs2Path: null,
@@ -16,6 +17,7 @@ const snapshot: AppSnapshot = {
     closeToTray: true,
     autoUpdate: true,
   },
+  updateState: { status: 'idle', version: null, errorKind: null },
 };
 
 const neverSubscribe = (): never => {

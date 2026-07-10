@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
+  <title>Test fixture placeholder</title>
+  <desc>Neutral abstract placeholder image for map upload/rendering tests. Not a real map layout.</desc>
+  <rect width="1000" height="1000" fill="#223344" />
+  <circle cx="500" cy="500" r="280" fill="#88aacc" />
+  <rect x="360" y="360" width="280" height="280" fill="#446688" />
+</svg>

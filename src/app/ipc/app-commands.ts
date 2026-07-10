@@ -1,15 +1,27 @@
-import type { LogContext, Logger, Settings } from '../../shared';
-import { appGetSnapshot, appReportRendererError, success } from '../../shared';
+import type { GameState, LogContext, Logger, Settings, UpdateState } from '../../shared';
+import {
+  appGetSnapshot,
+  appOpenExternal,
+  appReportRendererError,
+  failure,
+  success,
+} from '../../shared';
 import type { CommandRegistrationDeps } from './register-command';
-import { registerCommand } from './register-command';
+import { describeError, registerCommand } from './register-command';
 
 /**
  * The snapshot's slice providers, injected by the composition root. Grows by
- * one getter per mirror store with its owning task (gameState E10.7,
- * updates E18.1).
+ * one getter per mirror store with its owning task (updates E18.1).
  */
 export interface SnapshotDeps {
+  readonly getGameState: () => GameState;
   readonly getSettings: () => Settings;
+  readonly getUpdateState: () => UpdateState;
+}
+
+/** `shell.openExternal`-shaped: rejects when the OS handoff fails (E15.3). */
+export interface ExternalLinkDeps {
+  readonly openExternal: (url: string) => Promise<void>;
 }
 
 /**
@@ -24,8 +36,27 @@ export function registerAppCommands<TEvent>(
   deps: CommandRegistrationDeps<TEvent>,
   rendererLogger: Logger,
   snapshot: SnapshotDeps,
+  external: ExternalLinkDeps,
 ): void {
-  registerCommand(deps, appGetSnapshot, () => success({ settings: snapshot.getSettings() }));
+  registerCommand(deps, appGetSnapshot, () =>
+    success({
+      gameState: snapshot.getGameState(),
+      settings: snapshot.getSettings(),
+      updateState: snapshot.getUpdateState(),
+    }),
+  );
+
+  // The allowlist check IS the request schema (commands.ts): only contract
+  // URLs reach this handler — anything else already failed as INVALID_REQUEST.
+  registerCommand(deps, appOpenExternal, async ({ url }) => {
+    try {
+      await external.openExternal(url);
+    } catch (error) {
+      deps.logger.error('Opening an external URL failed', { error: describeError(error) });
+      return failure('INTERNAL', 'Could not open the link in the default browser.');
+    }
+    return success(undefined);
+  });
 
   registerCommand(deps, appReportRendererError, (report) => {
     const context: LogContext = {

@@ -1,0 +1,31 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14167,
+    "steamid": "76561190000000000",
+    "timestamp": 1783257738
+  },
+  "map": {
+    "mode": "competitive",
+    "name": "de_dust2",
+    "phase": "live",
+    "round": 0,
+    "team_ct": {
+      "score": 0,
+      "consecutive_round_losses": 1,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 0,
+      "consecutive_round_losses": 1,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

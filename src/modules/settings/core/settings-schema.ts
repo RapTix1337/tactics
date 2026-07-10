@@ -1,5 +1,15 @@
+import type { z } from 'zod';
+
 import type { Settings, SettingsField } from '../../../shared';
 import { SETTINGS_FIELD_SCHEMAS, SETTINGS_FIELDS } from '../../../shared';
+
+/**
+ * The shared map seen per-field as `z.ZodType<Settings[K]>` — the generic
+ * indexing in `applyField` needs this view; the shared export keeps the
+ * concrete schema types (E16.1 form resolver).
+ */
+const FIELD_SCHEMAS: { readonly [K in SettingsField]: z.ZodType<Settings[K]> } =
+  SETTINGS_FIELD_SCHEMAS;
 
 /**
  * Persistence-side settings logic over the contract-owned shape and field
@@ -46,7 +56,7 @@ function applyField<K extends SettingsField>(
   field: K,
   value: unknown,
 ): boolean {
-  const result = SETTINGS_FIELD_SCHEMAS[field].safeParse(value);
+  const result = FIELD_SCHEMAS[field].safeParse(value);
   if (!result.success) {
     return false;
   }

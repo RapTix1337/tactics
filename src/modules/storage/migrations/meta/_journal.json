@@ -15,6 +15,13 @@
       "when": 1783252974204,
       "tag": "0001_operational-state",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783372729962,
+      "tag": "0002_map-profiles",
+      "breakpoints": true
     }
   ]
 }

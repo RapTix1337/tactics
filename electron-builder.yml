@@ -1,9 +1,34 @@
-# Minimal packaging config — just enough for the CI packaging smoke test
-# (electron-builder --dir). The real installer configuration (NSIS target,
-# icons, uninstall hygiene) lands with the release-engineering epic.
+# Packaging configuration (E19.1): NSIS installer for Windows, installed
+# per-user without elevation (GSI-08). The appId is final — changing it
+# would break the auto-update path and the installer identity (ADR-047).
+# The release workflow publishing installers is E19.3.
 appId: io.github.raptix1337.tactics
 productName: TactiCS
 directories:
   output: dist
+  buildResources: build
 files:
   - out/**
+# Bundled map data (03-technical-design.md §4.3): the composition root reads
+# `<resources>/data/maps` in the packaged app (app-lifecycle.ts). The data
+# README ships along; the registry ignores plain files by design.
+extraResources:
+  - from: data/maps
+    to: data/maps
+win:
+  target: nsis
+  # Placeholder art for 1.0 (ADR-047, resolves open question #9).
+  icon: build/icon.ico
+nsis:
+  # One-click, current-user-only install — never triggers a UAC prompt
+  # (GSI-08: per-user install, no admin).
+  oneClick: true
+  perMachine: false
+  artifactName: ${productName}-Setup-${version}.${ext}
+  # Uninstall hygiene (E19.2, ADR-048): remove the recorded GSI config so
+  # CS2 stops POSTing to a dead endpoint after uninstall.
+  include: build/installer.nsh
+  # ADR-048 policy: user data (settings, profiles, strats) survives an
+  # uninstall and a later reinstall. This is the default — stated here
+  # because it is a decision, not an accident.
+  deleteAppDataOnUninstall: false

@@ -1,0 +1,1 @@
+{ "provider": { "name": "Counter-Strike: Global Offensive", this is not JSON

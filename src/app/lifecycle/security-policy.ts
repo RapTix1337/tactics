@@ -3,6 +3,12 @@
 // app-lifecycle.ts, the build-time meta-tag injection in
 // electron.vite.config.ts.
 
+import { MAP_IMAGE_PROTOCOL_SCHEME } from './map-image-protocol';
+
+// `img-src` additionally allows the read-only map-image protocol (ADR-045,
+// E22.2) — the one sanctioned way uploaded images reach the renderer.
+const IMG_SRC = `img-src 'self' data: ${MAP_IMAGE_PROTOCOL_SCHEME}:`;
+
 /**
  * Production CSP. Injected as a `<meta http-equiv>` tag into the built
  * renderer HTML at build time: packaged windows load via `file://`, which
@@ -16,7 +22,7 @@ export const PROD_CONTENT_SECURITY_POLICY = [
   "default-src 'none'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data:",
+  IMG_SRC,
   "font-src 'self'",
   "base-uri 'none'",
   "form-action 'none'",
@@ -36,7 +42,7 @@ export const DEV_CONTENT_SECURITY_POLICY = [
   "default-src 'none'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
+  IMG_SRC,
   "font-src 'self'",
   "connect-src 'self' ws://localhost:* ws://127.0.0.1:*",
   "base-uri 'none'",

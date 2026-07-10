@@ -6,6 +6,10 @@ CLAUDE.md
 .agents/
 skills-lock.json
 
+# Local-only reference material — third-party map radar exports we have no
+# license to redistribute (kept on disk for design reference only)
+tests/radar-example/
+
 # Dependencies
 node_modules/
 

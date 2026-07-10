@@ -1,5 +1,13 @@
 {
   "files": [],
+  // `paths` duplicated from tsconfig.web.json for the shadcn CLI only — it
+  // reads the nearest tsconfig.json and does not follow project references.
+  // No effect on tsc: this solution file compiles no files.
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/ui/*"]
+    }
+  },
   "references": [
     { "path": "./tsconfig.node.json" },
     { "path": "./tsconfig.web.json" },

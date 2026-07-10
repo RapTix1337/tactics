@@ -21,6 +21,14 @@ export const ERROR_CODES = [
   'DB_ERROR',
   /** The log export could not be written to the chosen location (PRV-04). */
   'EXPORT_FAILED',
+  /** A maps command for a mapId the catalog does not contain (contract §5.3). */
+  'MAP_NOT_FOUND',
+  /** A maps command for a profileId that does not exist on that map (E22.3). */
+  'PROFILE_NOT_FOUND',
+  /** A picked image failed the boundary validation: unreadable, oversized, wrong type, or a hostile SVG (ADR-045, E22.2). */
+  'IMAGE_INVALID',
+  /** `updates.install` without a downloaded update ready (REL-02, E18.1). */
+  'UPDATE_NOT_READY',
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];

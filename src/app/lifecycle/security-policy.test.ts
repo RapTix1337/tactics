@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { MAP_IMAGE_PROTOCOL_SCHEME } from './map-image-protocol';
 import {
   DEV_CONTENT_SECURITY_POLICY,
   PROD_CONTENT_SECURITY_POLICY,
@@ -15,6 +16,17 @@ describe('content security policies (ADR-025)', () => {
     expect(PROD_CONTENT_SECURITY_POLICY).toContain("style-src 'self'");
     expect(PROD_CONTENT_SECURITY_POLICY).toContain("base-uri 'none'");
     expect(PROD_CONTENT_SECURITY_POLICY).toContain("form-action 'none'");
+  });
+
+  it('allows images from the read-only map-image protocol only (ADR-045)', () => {
+    for (const policy of [PROD_CONTENT_SECURITY_POLICY, DEV_CONTENT_SECURITY_POLICY]) {
+      expect(policy).toContain(`img-src 'self' data: ${MAP_IMAGE_PROTOCOL_SCHEME}:`);
+      // The scheme must never leak into any other directive.
+      const otherDirectives = policy
+        .split('; ')
+        .filter((directive) => !directive.startsWith('img-src'));
+      expect(otherDirectives.join('; ')).not.toContain(MAP_IMAGE_PROTOCOL_SCHEME);
+    }
   });
 
   it('keeps every dev relaxation out of the production policy', () => {

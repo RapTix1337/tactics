@@ -116,6 +116,32 @@ describe('createErrorReporter', () => {
     expect(reports[0]?.stack).toHaveLength(8_000);
   });
 
+  it('attaches the current route from the getter, truncated to the schema cap', () => {
+    const { bridge, reports } = createFakeBridge();
+    const report = createErrorReporter(bridge, () => `/maps/${'x'.repeat(600)}`);
+
+    report(new Error('boom'), 'unused');
+
+    expect(reports[0]?.route).toHaveLength(500);
+    expect(reports[0]?.route?.startsWith('/maps/x')).toBe(true);
+    expect(reports[0]?.route?.endsWith('…')).toBe(true);
+  });
+
+  it('omits the route when the getter is absent, returns undefined, or throws', () => {
+    const { bridge, reports } = createFakeBridge();
+
+    createErrorReporter(bridge)(new Error('a'), 'unused');
+    createErrorReporter(bridge, () => undefined)(new Error('b'), 'unused');
+    createErrorReporter(bridge, () => {
+      throw new Error('router gone');
+    })(new Error('c'), 'unused');
+
+    expect(reports).toHaveLength(3);
+    for (const sent of reports) {
+      expect(sent.route).toBeUndefined();
+    }
+  });
+
   it('sends one suppression notice at the session cap, then goes quiet', () => {
     const { bridge, reports } = createFakeBridge();
     const report = createErrorReporter(bridge);

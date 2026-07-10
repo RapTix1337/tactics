@@ -170,8 +170,10 @@ tactics/
 
 ## Contributing
 
-Contribution guidelines will be published once the project reaches a
-contributable state.
+Contributions are welcome — see the
+[contributing guide](docs/11-contributing.md) for development setup, the
+branch/PR workflow, commit conventions, testing expectations, and how to
+contribute map data (facts only, GPL-3.0 like code).
 
 ## License
 

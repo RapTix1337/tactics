@@ -1,0 +1,2 @@
+This is not a KeyValues file at all — just prose with a stray " quote
+and some numbers 76561198999999999 that must never leak into issues.

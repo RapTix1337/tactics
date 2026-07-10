@@ -1,0 +1,48 @@
+{
+  "id": "de_dust2",
+  "displayName": "Dust 2",
+  "gsiNames": ["de_dust2"],
+  "levels": [{ "id": "main", "displayName": "Main", "svgFile": "main.svg" }],
+  "callouts": [
+    { "name": "T Spawn", "levelId": "main", "x": 485, "y": 890 },
+    { "name": "T Ramp", "levelId": "main", "x": 515, "y": 780 },
+    { "name": "Suicide", "levelId": "main", "x": 515, "y": 705 },
+    { "name": "Top Mid", "levelId": "main", "x": 520, "y": 650 },
+    { "name": "Mid", "levelId": "main", "x": 515, "y": 530 },
+    { "name": "Xbox", "levelId": "main", "x": 544, "y": 434 },
+    { "name": "Mid Doors", "levelId": "main", "x": 515, "y": 330 },
+    { "name": "CT Mid", "levelId": "main", "x": 515, "y": 280 },
+    { "name": "CT Spawn", "levelId": "main", "x": 605, "y": 155 },
+    { "name": "B Doors", "levelId": "main", "x": 400, "y": 152 },
+    { "name": "B Window", "levelId": "main", "x": 330, "y": 128 },
+    { "name": "B Site", "levelId": "main", "x": 215, "y": 150 },
+    { "name": "B Platform", "levelId": "main", "x": 145, "y": 95 },
+    { "name": "Big Box", "levelId": "main", "x": 269, "y": 119 },
+    { "name": "Car", "levelId": "main", "x": 165, "y": 200 },
+    { "name": "Tunnel Stairs", "levelId": "main", "x": 220, "y": 310 },
+    { "name": "Upper Tunnels", "levelId": "main", "x": 255, "y": 475 },
+    { "name": "Lower Tunnels", "levelId": "main", "x": 395, "y": 470 },
+    { "name": "Outside Tunnels", "levelId": "main", "x": 320, "y": 665 },
+    { "name": "Long Doors", "levelId": "main", "x": 690, "y": 715 },
+    { "name": "Outside Long", "levelId": "main", "x": 810, "y": 610 },
+    { "name": "Blue", "levelId": "main", "x": 842, "y": 668 },
+    { "name": "Long Corner", "levelId": "main", "x": 900, "y": 495 },
+    { "name": "Long A", "levelId": "main", "x": 895, "y": 390 },
+    { "name": "Pit", "levelId": "main", "x": 930, "y": 280 },
+    { "name": "A Ramp", "levelId": "main", "x": 850, "y": 272 },
+    { "name": "A Site", "levelId": "main", "x": 805, "y": 165 },
+    { "name": "Goose", "levelId": "main", "x": 735, "y": 108 },
+    { "name": "Barrels", "levelId": "main", "x": 872, "y": 135 },
+    { "name": "Catwalk", "levelId": "main", "x": 620, "y": 400 },
+    { "name": "Short Stairs", "levelId": "main", "x": 668, "y": 328 },
+    { "name": "A Short", "levelId": "main", "x": 710, "y": 262 }
+  ],
+  "bombSites": [
+    { "site": "A", "levelId": "main", "x": 800, "y": 160 },
+    { "site": "B", "levelId": "main", "x": 210, "y": 140 }
+  ],
+  "spawns": [
+    { "team": "T", "levelId": "main", "x": 485, "y": 905 },
+    { "team": "CT", "levelId": "main", "x": 630, "y": 120 }
+  ]
+}

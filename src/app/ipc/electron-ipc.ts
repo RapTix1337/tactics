@@ -3,11 +3,13 @@ import { join } from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, type IpcMainInvokeEvent, shell } from 'electron';
 
 import { exportLogs, getLogDirectory } from '../../modules/logging';
+import { createFsDirectoryProbe, validateCs2Path } from '../../modules/steam';
 import type { Logger } from '../../shared';
 import type { EventPublisher } from './event-publisher';
 import { createEventPublisher } from './event-publisher';
 import type { LogsCommandDeps } from './logs-commands';
 import type { CommandRegistrationDeps } from './register-command';
+import type { SteamCommandDeps } from './steam-commands';
 
 /**
  * The Electron-backed dependencies for the testable IPC core — thin wiring
@@ -57,6 +59,59 @@ export function createElectronLogsDeps(): LogsCommandDeps {
       return result.canceled || result.filePath === '' ? undefined : result.filePath;
     },
     exportLogs,
+  };
+}
+
+/**
+ * The Electron-backed steam command dependencies (E9.3): native directory
+ * dialog + the steam module's structure validation; persistence and event
+ * publishing are handed in by the composition root (the settings-commands
+ * precedent).
+ */
+export function createElectronSteamDeps(
+  persistence: Pick<SteamCommandDeps, 'updateSettings' | 'publisher'>,
+): SteamCommandDeps {
+  const probe = createFsDirectoryProbe();
+  return {
+    showDirectoryDialog: async (): Promise<string | undefined> => {
+      const options = {
+        title: 'Select the CS2 installation folder',
+        properties: ['openDirectory' as const],
+      };
+      // Modal to the app window when one is focused; detached otherwise.
+      const window = BrowserWindow.getFocusedWindow();
+      const result =
+        window === null
+          ? await dialog.showOpenDialog(options)
+          : await dialog.showOpenDialog(window, options);
+      return result.canceled || result.filePaths.length === 0 ? undefined : result.filePaths[0];
+    },
+    validateCs2Path: (path): ReturnType<SteamCommandDeps['validateCs2Path']> =>
+      validateCs2Path(path, probe),
+    ...persistence,
+  };
+}
+
+/**
+ * The Electron-backed image open dialog for the maps commands (E22.3, the
+ * dialog wiring E22.2 deferred here): thin wiring only — validation happens
+ * in the image store, never in the dialog. The `jpeg` filter entry only
+ * widens what users can pick; the magic-byte sniff decides the actual type.
+ */
+export function createElectronMapsImageDialog(): () => Promise<string | undefined> {
+  return async (): Promise<string | undefined> => {
+    const options = {
+      title: 'Select a map image',
+      properties: ['openFile' as const],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'svg'] }],
+    };
+    // Modal to the app window when one is focused; detached otherwise.
+    const window = BrowserWindow.getFocusedWindow();
+    const result =
+      window === null
+        ? await dialog.showOpenDialog(options)
+        : await dialog.showOpenDialog(window, options);
+    return result.canceled || result.filePaths.length === 0 ? undefined : result.filePaths[0];
   };
 }
 

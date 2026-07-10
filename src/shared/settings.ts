@@ -34,15 +34,20 @@ export const SETTINGS_FIELDS = [
   'autoUpdate',
 ] as const satisfies readonly SettingsField[];
 
-/** Per-field schemas — the unit of the module's tolerant per-field reads. */
-export const SETTINGS_FIELD_SCHEMAS: { [K in SettingsField]: z.ZodType<Settings[K]> } = {
+/**
+ * Per-field schemas — the unit of the module's tolerant per-field reads.
+ * `satisfies` (not an annotation) keeps the concrete schema types visible:
+ * the E16.1 form resolver needs the input types, which `z.ZodType<…>`
+ * would erase to `unknown`.
+ */
+export const SETTINGS_FIELD_SCHEMAS = {
   theme: z.enum(THEMES),
   cs2Path: z.string().min(1).nullable(),
   gsiPort: z.number().int().min(1).max(65535).nullable(),
   autostart: z.boolean(),
   closeToTray: z.boolean(),
   autoUpdate: z.boolean(),
-};
+} satisfies { [K in SettingsField]: z.ZodType<Settings[K]> };
 
 /** The full settings slice: `settings.update` response, event payload, snapshot slice. */
 export const settingsSchema = z.object(SETTINGS_FIELD_SCHEMAS);

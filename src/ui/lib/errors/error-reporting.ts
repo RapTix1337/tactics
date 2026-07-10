@@ -15,6 +15,9 @@ export const MAX_REPORTS_PER_RENDERER_SESSION = 50;
 // (commands.ts) stay above these on purpose, as the boundary guard.
 const MESSAGE_LIMIT = 1_000;
 const STACK_LIMIT = 8_000;
+// The route cap equals the schema cap: routes are short app paths, an
+// overrun would only ever come from a runaway `$mapId` param.
+const ROUTE_LIMIT = 500;
 
 /**
  * Reports one escalated renderer error to main (§8.3). `candidate` is the
@@ -26,12 +29,18 @@ export type ErrorReporter = (candidate: unknown, fallbackMessage: string) => voi
 
 /**
  * The renderer's single escalation path to `app.reportRendererError` —
- * the global handlers below and the React error boundary (E13.3) share one
+ * the global handlers below and the route error boundary (E13.3) share one
  * reporter instance, so an error reaching both is deduplicated by object
  * identity (WeakSet: no retention). Reporting failures never throw: a
- * throwing 'error' listener would fire the error event again.
+ * throwing 'error' listener would fire the error event again. `getRoute`
+ * resolves the current route lazily per report — the router is created
+ * after the reporter (main.tsx), and it must not break a report when it
+ * throws or is still absent.
  */
-export function createErrorReporter(bridge: TacticsBridge | undefined): ErrorReporter {
+export function createErrorReporter(
+  bridge: TacticsBridge | undefined,
+  getRoute?: () => string | undefined,
+): ErrorReporter {
   const reported = new WeakSet<object>();
   let sent = 0;
   let suppressionAnnounced = false;
@@ -57,7 +66,10 @@ export function createErrorReporter(bridge: TacticsBridge | undefined): ErrorRep
         return;
       }
       sent += 1;
-      send(bridge, describeCandidate(candidate, fallbackMessage));
+      send(bridge, {
+        ...describeCandidate(candidate, fallbackMessage),
+        ...describeRoute(getRoute),
+      });
     } catch (cause) {
       console.error('Renderer error reporting failed', cause);
     }
@@ -86,6 +98,17 @@ export function installGlobalErrorHandlers(target: GlobalErrorTarget, report: Er
   target.addEventListener('unhandledrejection', (event) => {
     report(event.reason, `Unhandled promise rejection: ${safeString(event.reason)}`);
   });
+}
+
+function describeRoute(
+  getRoute: (() => string | undefined) | undefined,
+): Pick<RendererErrorReport, 'route'> {
+  try {
+    const route = getRoute?.();
+    return route === undefined ? {} : { route: truncate(route, ROUTE_LIMIT) };
+  } catch {
+    return {};
+  }
 }
 
 function describeCandidate(candidate: unknown, fallbackMessage: string): RendererErrorReport {

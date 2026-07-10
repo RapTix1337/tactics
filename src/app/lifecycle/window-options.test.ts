@@ -41,4 +41,26 @@ describe('buildMainWindowOptions', () => {
     expect(options.height).toBe(DEFAULT_WINDOW_HEIGHT);
     expect(options.show).toBe(false);
   });
+
+  it('leaves x/y unset without initial bounds so Electron centers the window', () => {
+    expect(options).not.toHaveProperty('x');
+    expect(options).not.toHaveProperty('y');
+  });
+
+  // E17.3: the restored placement replaces the default one; everything else
+  // (hardening, min size, hidden start) is unaffected by the restore path.
+  it('applies restored initial bounds while keeping the hardening intact', () => {
+    const restored = buildMainWindowOptions(preloadPath, {
+      x: 200,
+      y: 120,
+      width: 1400,
+      height: 900,
+    });
+
+    expect(restored).toMatchObject({ x: 200, y: 120, width: 1400, height: 900 });
+    expect(restored.minWidth).toBe(MIN_WINDOW_WIDTH);
+    expect(restored.minHeight).toBe(MIN_WINDOW_HEIGHT);
+    expect(restored.show).toBe(false);
+    expect(restored.webPreferences).toEqual(options.webPreferences);
+  });
 });

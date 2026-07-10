@@ -3,7 +3,14 @@
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
-    "types": []
+    // vite/client declares asset imports (the globals.css side-effect import).
+    "types": ["vite/client"],
+    // Renderer-only alias for shadcn/ui-generated imports (E13.1); project
+    // code keeps relative imports. Mirrored in electron.vite.config.ts and
+    // vitest.config.ts.
+    "paths": {
+      "@/*": ["./src/ui/*"]
+    }
   },
   "include": ["src/ui/**/*", "src/shared/**/*"]
 }
