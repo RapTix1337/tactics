@@ -70,10 +70,24 @@ jobs:
       - name: E2E (Playwright, built app)
         run: pnpm test:e2e
 
-      # Builds the NSIS installer and uploads installer, blockmap, and
-      # latest.yml to a draft release named after the version (created if
-      # missing). Publishing the draft is the maintainer's manual step.
-      - name: Package and publish draft release
+      # Publishing is deliberately NOT left to electron-builder: its GitHub
+      # publisher raced itself into two draft releases on v0.0.1, splitting
+      # the assets between them (blockmap in one, installer + latest.yml in
+      # the other) with a green exit. Build only; upload separately.
+      - name: Package installer
+        run: pnpm exec electron-builder --publish never
+
+      # One draft release, all three artifacts, one command that fails loudly
+      # when anything is missing. Publishing the draft stays the maintainer's
+      # manual step (REL-01).
+      - name: Create draft release with artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm exec electron-builder --publish always
+          TAG: ${{ github.ref_name }}
+        run: |
+          $assets = @(Get-ChildItem 'dist/TactiCS-Setup-*.exe', 'dist/TactiCS-Setup-*.exe.blockmap', 'dist/latest.yml').FullName
+          if ($assets.Count -ne 3) {
+            Write-Error "Expected 3 release assets, found $($assets.Count): $assets"
+            exit 1
+          }
+          gh release create $env:TAG --draft --verify-tag --title $env:TAG @assets
