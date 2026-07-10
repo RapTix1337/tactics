@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TacticsBridge } from '../../../shared/bridge';
@@ -58,6 +58,22 @@ function stubImageLayout(image: HTMLElement): void {
     offsetTop: { value: 24, configurable: true },
     offsetWidth: { value: 800, configurable: true },
     offsetHeight: { value: 600, configurable: true },
+  });
+}
+
+/**
+ * Drives the image measurement to completion. The test-setup ResizeObserver
+ * stub never fires, so the load event is the only measurement trigger in
+ * tests — and its listener attaches in a passive effect that can lag the
+ * image query under full-suite load (open question #15's flake: a single
+ * early `load` was silently missed and the view stayed unmeasured forever).
+ * Re-firing until `measured` sees the effect is idempotent and closes the
+ * race for good.
+ */
+async function loadImageUntilMeasured(image: HTMLElement, measured: () => void): Promise<void> {
+  await waitFor(() => {
+    fireEvent.load(image);
+    measured();
   });
 }
 
@@ -339,7 +355,9 @@ describe('MapView', () => {
       render(<MapView mapId="de_dust2" />);
       const image = await screen.findByTestId('map-view-image');
       stubImageLayout(image);
-      fireEvent.load(image);
+      await loadImageUntilMeasured(image, () => {
+        expect(screen.getByRole('list', { name: 'Callouts' })).toBeInTheDocument();
+      });
       return screen.getByRole('application');
     }
 
@@ -391,7 +409,9 @@ describe('MapView', () => {
       render(<MapView mapId="de_dust2" editable />);
       const image = await screen.findByTestId('map-view-image');
       stubImageLayout(image);
-      fireEvent.load(image);
+      await loadImageUntilMeasured(image, () => {
+        expect(screen.getByRole('button', { name: 'Edit callouts' })).toBeEnabled();
+      });
       const canvas = screen.getByRole('application');
       mockCanvasViewport(canvas);
       return canvas;
@@ -439,9 +459,9 @@ describe('MapView', () => {
       expect(screen.getByRole('button', { name: 'Edit callouts' })).toBeDisabled();
 
       stubImageLayout(image);
-      fireEvent.load(image);
-
-      expect(screen.getByRole('button', { name: 'Edit callouts' })).toBeEnabled();
+      await loadImageUntilMeasured(image, () => {
+        expect(screen.getByRole('button', { name: 'Edit callouts' })).toBeEnabled();
+      });
     });
 
     it('adds a callout at the clicked position and saves the set (round-trip)', async () => {
