@@ -229,6 +229,19 @@ describe('MapView', () => {
       await screen.findByTestId('map-view-image');
       const canvas = screen.getByRole('application');
       mockCanvasViewport(canvas);
+      // The wheel listener attaches natively in a passive effect (React
+      // registers `wheel` passively, so preventDefault needs the native
+      // listener) and can lag the image query under full-suite load — the
+      // missed-first-event flake of open question #15. Probe-zoom until the
+      // listener demonstrably reacts, then reset to the identity transform
+      // every test here starts from (the reset key is a React prop — no
+      // attachment race).
+      await waitFor(() => {
+        fireEvent.wheel(canvas, { deltaY: -100, clientX: 0, clientY: 0 });
+        expect(getTransform().scale).toBeGreaterThan(1);
+      });
+      fireEvent.keyDown(canvas, { key: '0' });
+      expect(getTransform()).toEqual({ x: 0, y: 0, scale: 1 });
       return canvas;
     }
 
