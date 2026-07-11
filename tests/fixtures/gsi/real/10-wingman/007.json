@@ -1,0 +1,105 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783805848
+  },
+  "map": {
+    "mode": "scrimcomp2v2",
+    "name": "de_nuke",
+    "phase": "live",
+    "round": 6,
+    "team_ct": {
+      "score": 0,
+      "consecutive_round_losses": 6,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 6,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0,
+    "round_wins": {
+      "1": "t_win_elimination",
+      "2": "t_win_elimination",
+      "3": "t_win_elimination",
+      "4": "t_win_elimination",
+      "5": "t_win_elimination",
+      "6": "t_win_elimination"
+    }
+  },
+  "round": {
+    "phase": "over",
+    "win_team": "T"
+  },
+  "player": {
+    "steamid": "76561190000000001",
+    "name": "Player",
+    "observer_slot": 2,
+    "team": "T",
+    "activity": "playing",
+    "state": {
+      "health": 100,
+      "armor": 100,
+      "helmet": true,
+      "flashed": 0,
+      "smoked": 0,
+      "burning": 0,
+      "money": 5500,
+      "round_kills": 1,
+      "round_killhs": 1,
+      "equip_value": 4200
+    },
+    "match_stats": {
+      "kills": 1,
+      "assists": 0,
+      "deaths": 1,
+      "mvps": 1,
+      "score": 2
+    }
+  },
+  "previously": {
+    "map": {
+      "round": 5,
+      "team_ct": {
+        "consecutive_round_losses": 5
+      },
+      "team_t": {
+        "score": 5
+      }
+    },
+    "round": {
+      "phase": "live"
+    },
+    "player": {
+      "state": {
+        "money": 2450,
+        "round_kills": 0,
+        "round_killhs": 0
+      },
+      "match_stats": {
+        "kills": 0,
+        "mvps": 0,
+        "score": 0
+      }
+    }
+  },
+  "added": {
+    "map": {
+      "round_wins": {
+        "6": true
+      }
+    },
+    "round": {
+      "win_team": true
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

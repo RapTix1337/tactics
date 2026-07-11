@@ -1,0 +1,34 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783805989
+  },
+  "map": {
+    "mode": "scrimcomp2v2",
+    "name": "de_nuke",
+    "phase": "warmup",
+    "round": 0,
+    "team_ct": {
+      "score": 0,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 0,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0
+  },
+  "previously": {
+    "player": true
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783809491
+  },
+  "map": {
+    "mode": "competitive",
+    "name": "de_cache",
+    "phase": "live",
+    "round": 16,
+    "team_ct": {
+      "score": 11,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 3,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 5,
+      "consecutive_round_losses": 5,
+      "timeouts_remaining": 3,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0,
+    "round_wins": {
+      "1": "ct_win_defuse",
+      "2": "ct_win_elimination",
+      "3": "ct_win_elimination",
+      "4": "t_win_bomb",
+      "5": "t_win_bomb",
+      "6": "t_win_elimination",
+      "7": "ct_win_elimination",
+      "8": "t_win_elimination",
+      "9": "t_win_elimination",
+      "10": "ct_win_defuse",
+      "11": "t_win_elimination",
+      "12": "t_win_elimination",
+      "13": "ct_win_elimination",
+      "14": "ct_win_elimination",
+      "15": "ct_win_elimination",
+      "16": "ct_win_elimination"
+    }
+  },
+  "round": {
+    "phase": "live",
+    "bomb": "planted"
+  },
+  "player": {
+    "steamid": "76561190000000001",
+    "name": "Player",
+    "observer_slot": 3,
+    "team": "CT",
+    "activity": "playing",
+    "state": {
+      "health": 100,
+      "armor": 100,
+      "helmet": true,
+      "defusekit": true,
+      "flashed": 0,
+      "smoked": 0,
+      "burning": 0,
+      "money": 1300,
+      "round_kills": 1,
+      "round_killhs": 0,
+      "equip_value": 6650
+    },
+    "match_stats": {
+      "kills": 8,
+      "assists": 5,
+      "deaths": 10,
+      "mvps": 2,
+      "score": 23
+    }
+  },
+  "previously": {
+    "player": {
+      "steamid": "76561190000000000",
+      "name": "Player",
+      "observer_slot": 1,
+      "state": {
+        "health": 0,
+        "armor": 0,
+        "helmet": false,
+        "money": 3650,
+        "round_kills": 3,
+        "round_killhs": 1,
+        "equip_value": 7150
+      },
+      "match_stats": {
+        "kills": 19,
+        "assists": 3,
+        "deaths": 11,
+        "mvps": 3,
+        "score": 46
+      }
+    }
+  },
+  "added": {
+    "player": {
+      "state": {
+        "defusekit": true
+      }
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

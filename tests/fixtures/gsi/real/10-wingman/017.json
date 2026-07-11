@@ -1,0 +1,93 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783806244
+  },
+  "map": {
+    "mode": "scrimcomp2v2",
+    "name": "de_nuke",
+    "phase": "intermission",
+    "round": 8,
+    "team_ct": {
+      "score": 7,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 1,
+      "consecutive_round_losses": 6,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0,
+    "round_wins": {
+      "1": "ct_win_elimination",
+      "2": "t_win_elimination",
+      "3": "ct_win_elimination",
+      "4": "ct_win_elimination",
+      "5": "ct_win_elimination",
+      "6": "ct_win_elimination",
+      "7": "ct_win_elimination",
+      "8": "ct_win_elimination"
+    }
+  },
+  "round": {
+    "phase": "freezetime",
+    "win_team": "CT"
+  },
+  "player": {
+    "steamid": "76561190000000000",
+    "name": "Player",
+    "observer_slot": 0,
+    "team": "CT",
+    "activity": "textinput",
+    "state": {
+      "health": 100,
+      "armor": 0,
+      "helmet": false,
+      "flashed": 0,
+      "smoked": 0,
+      "burning": 0,
+      "money": 8000,
+      "round_kills": 0,
+      "round_killhs": 0,
+      "equip_value": 200
+    },
+    "match_stats": {
+      "kills": 0,
+      "assists": 0,
+      "deaths": 3,
+      "mvps": 0,
+      "score": 0
+    }
+  },
+  "previously": {
+    "map": {
+      "phase": "live",
+      "round": 7,
+      "team_ct": {
+        "score": 6
+      },
+      "team_t": {
+        "consecutive_round_losses": 5
+      }
+    }
+  },
+  "added": {
+    "map": {
+      "round_wins": {
+        "8": true
+      }
+    },
+    "round": {
+      "win_team": true
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

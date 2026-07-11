@@ -1,0 +1,62 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783805604
+  },
+  "map": {
+    "mode": "scrimcomp2v2",
+    "name": "de_nuke",
+    "phase": "warmup",
+    "round": 0,
+    "team_ct": {
+      "score": 0,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 0,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0
+  },
+  "player": {
+    "steamid": "76561190000000000",
+    "name": "Player",
+    "observer_slot": 1,
+    "team": "T",
+    "activity": "textinput",
+    "state": {
+      "health": 100,
+      "armor": 0,
+      "helmet": false,
+      "flashed": 0,
+      "smoked": 0,
+      "burning": 0,
+      "money": 8000,
+      "round_kills": 0,
+      "round_killhs": 0,
+      "equip_value": 200
+    },
+    "match_stats": {
+      "kills": 0,
+      "assists": 0,
+      "deaths": 0,
+      "mvps": 0,
+      "score": 0
+    }
+  },
+  "previously": {
+    "player": {
+      "activity": "playing"
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}
