@@ -4,8 +4,9 @@
 
 > **Tactics + CS** — an open-source desktop companion app for Counter-Strike 2.
 
-> **Status: early stage — in development.** Planning and architecture are
-> complete; Phase 3 (walking skeleton → MVP) is in progress.
+> **Status: MVP complete.** Phase 3 (GSI auto-setup, map detection,
+> callouts) is done; installers are published on
+> [GitHub Releases](https://github.com/RapTix1337/tactics/releases).
 
 ## What is TactiCS?
 
@@ -29,15 +30,16 @@ uploading their data to closed platforms.
 - Welcoming to open-source contributors: readable code, thorough docs
 - Privacy-friendly: local-first by default
 
-## Planned Features
+## Features
 
-### Milestone 1 — Map & Callouts (MVP)
+### Milestone 1 — Map & Callouts (MVP, shipped)
 
-- Detect a running/installed Counter-Strike 2
-- Automatically configure Game State Integration (GSI)
-- Provide a local HTTP server receiving GSI data
-- Detect the currently played map
-- Display the matching map with **all callouts**
+- Detects a running/installed Counter-Strike 2
+- Automatically configures Game State Integration (GSI)
+- Runs a local HTTP server receiving GSI data (localhost-only, token-secured)
+- Detects the currently played map and follows it live
+- Displays the matching map with **all callouts** — map images are
+  user-provided, with per-map profiles and an in-app callout editor
 
 ### Later (directional roadmap, not commitments)
 
@@ -66,13 +68,32 @@ Finalized in the architecture & technical design phase.
 | Persistence | SQLite via better-sqlite3 + Drizzle ORM |
 | Logging | electron-log |
 | Unit/integration tests | Vitest + React Testing Library |
-| E2E tests | Playwright (final confirmation via an early spike) |
+| E2E tests | Playwright |
 | Lint/format | ESLint + Prettier |
 | Git hooks | husky + lint-staged + commitlint |
 | Package manager | pnpm |
 
 **Platforms:** Windows first; the code is kept platform-neutral so Linux
 support can follow.
+
+## Installation
+
+Download the latest `TactiCS-Setup-<version>.exe` from
+[GitHub Releases](https://github.com/RapTix1337/tactics/releases) and run
+it. The installer is per-user — no administrator rights required. The app
+keeps itself current via built-in auto-update (disableable in the
+settings).
+
+> **Windows SmartScreen warning:** the TactiCS installer is not yet
+> code-signed, so Windows shows a blue "Windows protected your PC" dialog
+> when you run it. Click **More info**, then **Run anyway** to install.
+> TactiCS is open source; every installer is built from a tagged commit by
+> a public GitHub Actions workflow, so you can verify what you are
+> running.
+
+Code signing is planned once the project has users; every release is
+built and published by the tag-triggered GitHub Actions release workflow
+([.github/workflows/release.yml](.github/workflows/release.yml)).
 
 ## Development Setup
 
@@ -96,7 +117,7 @@ Windows notes:
 
 - Run the setup commands in the same shell (PowerShell) whose `PATH` `git`
   inherits, so the husky hooks can find `pnpm` (see
-  [docs/11-contributing.md](docs/11-contributing.md)).
+  [CONTRIBUTING.md](CONTRIBUTING.md)).
 - Native rebuilds against the Electron ABI (if ever triggered) need the
   Visual Studio "Desktop development with C++" workload plus Python 3 for
   node-gyp.
@@ -164,16 +185,16 @@ tactics/
 | 0 | Project setup, rules, documentation skeleton | ✅ done |
 | 1 | Requirements engineering | ✅ done |
 | 2 | Architecture & technical design | ✅ done |
-| 3 | MVP: GSI auto-setup, map detection, callouts | 🔨 in progress |
+| 3 | MVP: GSI auto-setup, map detection, callouts | ✅ done |
 | 4 | First post-1.0 releases (training mode, …) | planned |
 | 5+ | Extensions (see roadmap) | directional |
 
 ## Contributing
 
-Contributions are welcome — see the
-[contributing guide](docs/11-contributing.md) for development setup, the
-branch/PR workflow, commit conventions, testing expectations, and how to
-contribute map data (facts only, GPL-3.0 like code).
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for
+development setup, the branch/PR workflow, commit conventions, testing
+expectations, and how to contribute map data (facts only, GPL-3.0 like
+code).
 
 ## License
 
