@@ -64,6 +64,12 @@ const SOURCE_LABELS: Record<ReadyGsiSetupPlan['source'], string> = {
   manual: 'Set manually in settings',
 };
 
+/** The GSI-04 restart note (ADR-042: static, no process detection). Exported
+ * so the settings timing section shows the identical wording — one sentence,
+ * two places (SCB.11). */
+export const GSI_RESTART_NOTICE =
+  'CS2 loads Game State Integration configs only at game start — if CS2 is running right now, restart it afterwards.';
+
 /**
  * The MVP-02 setup/repair dialog (06-ui.md §2): previews the
  * `gsi.getSetupPlan` result, and the single confirmation click triggers
@@ -200,10 +206,7 @@ export function GsiSetupDialog({ open, onOpenChange, mode }: GsiSetupDialogProps
           </dl>
         )}
 
-        <p className="text-sm text-muted-foreground">
-          CS2 loads Game State Integration configs only at game start — if CS2 is running right now,
-          restart it afterwards.
-        </p>
+        <p className="text-sm text-muted-foreground">{GSI_RESTART_NOTICE}</p>
 
         {actionError !== undefined && <p className="text-sm text-destructive">{actionError}</p>}
 

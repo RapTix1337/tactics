@@ -29,7 +29,16 @@ function readCorpusInOrder(): GsiPayloadSubset[] {
 }
 
 function payload(mapName: string | null, providerTimestamp = 1): GsiPayloadSubset {
-  return { providerTimestamp, mapName };
+  // The status machine reads only `mapName`/`providerTimestamp`; the widened
+  // scoreboard sections (SCB.2) are irrelevant here and stay empty.
+  return {
+    providerTimestamp,
+    mapName,
+    providerSteamId: null,
+    map: null,
+    round: null,
+    player: null,
+  };
 }
 
 // The machine's scheduler port backed by (fake-timer-controlled) globals —
@@ -224,19 +233,25 @@ describe('createGsiStatusMachine', () => {
       expect(received).toEqual([{ status: 'waiting', mapName: null }]);
     });
 
-    it('replaying the full real corpus in order yields exactly 5 events for 17 payloads', () => {
-      // menus ×5 → map load (none, de_dust2) → mid-match ×6 (identical
-      // heartbeats) → map change (none, de_cache ×2) → game exit (none).
+    it('replaying the full real corpus emits one event per distinct consecutive map state (change filtering)', () => {
+      // Change filtering (02-architecture §4.2): the machine emits only on a
+      // structural change, so replaying the corpus reproduces exactly its
+      // map-name sequence with consecutive duplicates collapsed — far fewer
+      // events than payloads, and robust to the corpus growing (SCB.1 added
+      // the scoreboard scenarios/maps to the same directory tree).
+      const corpus = readCorpusInOrder();
+      const expectedMapNames = corpus
+        .map((p) => p.mapName)
+        .filter((mapName, index, all) => index === 0 || mapName !== all[index - 1]);
+
       machine.reportConfigValid();
       const start = events.length;
-      for (const p of readCorpusInOrder()) machine.handlePayload(p);
-      expect(events.slice(start)).toEqual([
-        { status: 'connected', mapName: null }, // first menus heartbeat
-        { status: 'connected', mapName: 'de_dust2' }, // map load completes
-        { status: 'connected', mapName: null }, // map change: section drops
-        { status: 'connected', mapName: 'de_cache' }, // new map loaded
-        { status: 'connected', mapName: null }, // game exit: back to menus
-      ]);
+      for (const p of corpus) machine.handlePayload(p);
+
+      expect(events.slice(start)).toEqual(
+        expectedMapNames.map((mapName) => ({ status: 'connected', mapName })),
+      );
+      expect(events.slice(start).length).toBeLessThan(corpus.length);
     });
   });
 });

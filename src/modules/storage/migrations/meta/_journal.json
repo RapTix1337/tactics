@@ -22,6 +22,13 @@
       "when": 1783372729962,
       "tag": "0002_map-profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1783817086023,
+      "tag": "0003_scoreboard-settings",
+      "breakpoints": true
     }
   ]
 }

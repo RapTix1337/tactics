@@ -8,6 +8,18 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
  * tolerant read fall back to the field's default (settings-repository.ts).
  * Domain validation is the core schema's job — columns stay loose on purpose.
  */
+/**
+ * DDL default for `scoreboard_layout`, frozen when migration 0003 was
+ * generated so a v1.0 row upgrades to real values (no fallback warnings).
+ * Deliberately a literal, not derived from the code default: a later change
+ * to DEFAULT_SCOREBOARD_LAYOUT must not alter this column default —
+ * drizzle-kit would generate a table-recreate migration for it.
+ */
+const SCOREBOARD_LAYOUT_COLUMN_DEFAULT =
+  '{"groups":[{"label":"Match totals","fields":["kills","deaths","assists","kd","mvps"]},' +
+  '{"label":"Derived","fields":["hsRate"]},' +
+  '{"label":"Live round state","fields":["health","armor","money","equipValue"]}]}';
+
 export const settingsTable = sqliteTable('settings', {
   id: integer('id').primaryKey(),
   theme: text('theme').notNull(),
@@ -16,6 +28,9 @@ export const settingsTable = sqliteTable('settings', {
   autostart: integer('autostart').notNull(),
   closeToTray: integer('close_to_tray').notNull(),
   autoUpdate: integer('auto_update').notNull(),
+  scoreboardEnabled: integer('scoreboard_enabled').notNull().default(1),
+  scoreboardLayout: text('scoreboard_layout').notNull().default(SCOREBOARD_LAYOUT_COLUMN_DEFAULT),
+  gsiTiming: text('gsi_timing').notNull().default('default'),
 });
 
 /**

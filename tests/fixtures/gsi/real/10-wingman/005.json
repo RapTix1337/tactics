@@ -1,0 +1,99 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783805654
+  },
+  "map": {
+    "mode": "scrimcomp2v2",
+    "name": "de_nuke",
+    "phase": "live",
+    "round": 1,
+    "team_ct": {
+      "score": 0,
+      "consecutive_round_losses": 1,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 1,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0,
+    "round_wins": {
+      "1": "t_win_elimination"
+    }
+  },
+  "round": {
+    "phase": "over",
+    "win_team": "T"
+  },
+  "player": {
+    "steamid": "76561190000000000",
+    "name": "Player",
+    "observer_slot": 1,
+    "team": "T",
+    "activity": "playing",
+    "state": {
+      "health": 100,
+      "armor": 100,
+      "helmet": false,
+      "flashed": 0,
+      "smoked": 0,
+      "burning": 0,
+      "money": 3500,
+      "round_kills": 1,
+      "round_killhs": 1,
+      "equip_value": 850
+    },
+    "match_stats": {
+      "kills": 1,
+      "assists": 0,
+      "deaths": 0,
+      "mvps": 1,
+      "score": 4
+    }
+  },
+  "previously": {
+    "map": {
+      "round": 0,
+      "team_ct": {
+        "consecutive_round_losses": 0
+      },
+      "team_t": {
+        "score": 0
+      }
+    },
+    "round": {
+      "phase": "live",
+      "bomb": "planted"
+    },
+    "player": {
+      "state": {
+        "money": 450,
+        "round_kills": 0,
+        "round_killhs": 0
+      },
+      "match_stats": {
+        "kills": 0,
+        "mvps": 0,
+        "score": 2
+      }
+    }
+  },
+  "added": {
+    "map": {
+      "round_wins": true
+    },
+    "round": {
+      "win_team": true
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

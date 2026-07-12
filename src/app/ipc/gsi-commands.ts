@@ -1,4 +1,4 @@
-import type { Logger } from '../../shared';
+import type { GsiTiming, Logger } from '../../shared';
 import { failure, gsiApplySetup, gsiGetSetupPlan, success } from '../../shared';
 import type { CommandRegistrationDeps } from './register-command';
 import { describeError, registerCommand } from './register-command';
@@ -27,12 +27,24 @@ export interface GsiCommandDeps {
   readonly resolveSetupTarget: () => Promise<GsiSetupTarget | undefined>;
   /** `settings.gsiPort` ?? last effective port ?? the ADR-031 default. */
   readonly getSetupPort: () => number;
+  /** The `settings.gsiTiming` profile the config content must render (ADR-051). */
+  readonly getSetupTiming: () => GsiTiming;
   /** GSI auth token from operational state (generated on first access). */
   readonly getAuthToken: () => string;
   /** Absolute path of the config file inside a cfg directory (plan display and uninstall record). */
   readonly getConfigPath: (cfgDir: string) => string;
-  readonly verifyConfig: (cfgDir: string, port: number, token: string) => Promise<GsiConfigCheck>;
-  readonly writeConfig: (cfgDir: string, port: number, token: string) => Promise<void>;
+  readonly verifyConfig: (
+    cfgDir: string,
+    port: number,
+    token: string,
+    timing: GsiTiming,
+  ) => Promise<GsiConfigCheck>;
+  readonly writeConfig: (
+    cfgDir: string,
+    port: number,
+    token: string,
+    timing: GsiTiming,
+  ) => Promise<void>;
   /**
    * Records the written config's absolute path for the NSIS uninstaller
    * (E19.2, ADR-048). Best-effort by contract: `false` = not recorded;
@@ -81,12 +93,13 @@ export function registerGsiCommands<TEvent>(
 
     const port = gsi.getSetupPort();
     const token = gsi.getAuthToken();
+    const timing = gsi.getSetupTiming();
     let check: GsiConfigCheck;
     try {
-      await gsi.writeConfig(target.cfgDir, port, token);
+      await gsi.writeConfig(target.cfgDir, port, token, timing);
       // Re-verify the bytes CS2 will actually read (E10.6 acceptance) —
       // also the transition input: a written config is a verified config.
-      check = await gsi.verifyConfig(target.cfgDir, port, token);
+      check = await gsi.verifyConfig(target.cfgDir, port, token, timing);
     } catch (error) {
       // Paths and error names only — never token or content (ADR-030).
       deps.logger.error('Writing the GSI config failed', {
@@ -159,7 +172,12 @@ export async function runStartupConfigVerify(gsi: GsiCommandDeps, logger: Logger
 
   let check: GsiConfigCheck;
   try {
-    check = await gsi.verifyConfig(target.cfgDir, gsi.getSetupPort(), gsi.getAuthToken());
+    check = await gsi.verifyConfig(
+      target.cfgDir,
+      gsi.getSetupPort(),
+      gsi.getAuthToken(),
+      gsi.getSetupTiming(),
+    );
   } catch (error) {
     logger.warn('GSI config unreadable during startup verify — treating as invalid', {
       cfgDir: target.cfgDir,

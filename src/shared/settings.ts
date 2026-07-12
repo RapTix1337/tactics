@@ -2,16 +2,100 @@ import { z } from 'zod';
 
 /**
  * The settings shape as it crosses the IPC boundary (03-technical-design.md
- * §5.3/§5.4) — the single source of truth for the six MVP settings
- * (01-requirements.md §9). The `settings` module builds its tolerant
- * persistence on the same field schemas (E8.1/E8.3); the renderer imports
- * the types only — validation stays main-only (ADR-022).
+ * §5.3/§5.4) — the single source of truth for the MVP settings
+ * (01-requirements.md §9) plus the live-scoreboard fields (ADR-053). The
+ * `settings` module builds its tolerant persistence on the same field
+ * schemas (E8.1/E8.3); the renderer imports the types only — validation
+ * stays main-only (ADR-022).
  */
 export const THEMES = ['dark', 'light', 'system'] as const;
 
 export type Theme = (typeof THEMES)[number];
 
-/** The six MVP settings — exactly 01-requirements.md §9, nothing more. */
+/**
+ * The closed set of scoreboard stat fields a layout may reference
+ * (live-scoreboard 02-design.md §3.3; no `adr` — ADR-055). `kd`/`kMinusD`
+ * are renderer-derived but are layout entries like any other.
+ */
+export const FIELD_IDS = [
+  'kills',
+  'assists',
+  'deaths',
+  'mvps',
+  'score',
+  'kd',
+  'kMinusD',
+  'hsRate',
+  'hsKills',
+  'health',
+  'armor',
+  'money',
+  'equipValue',
+  'roundKills',
+  'roundHsKills',
+] as const;
+
+export type FieldId = (typeof FIELD_IDS)[number];
+
+/** GSI timing profiles (ADR-051): buffer/throttle presets for the CS2 config. */
+export const GSI_TIMINGS = ['slow', 'default', 'fast'] as const;
+
+export type GsiTiming = (typeof GSI_TIMINGS)[number];
+
+export interface ScoreboardLayoutGroup {
+  readonly label: string;
+  readonly fields: readonly FieldId[];
+}
+
+/** The user-composed scoreboard: ordered groups of stat tiles (ADR-053). */
+export interface ScoreboardLayout {
+  readonly groups: readonly ScoreboardLayoutGroup[];
+}
+
+export const SCOREBOARD_GROUP_LABEL_MAX_LENGTH = 24;
+
+const FIELD_ID_SET: ReadonlySet<string> = new Set(FIELD_IDS);
+
+function isFieldId(value: unknown): value is FieldId {
+  return typeof value === 'string' && FIELD_ID_SET.has(value);
+}
+
+/**
+ * Normalizing layout schema (ADR-053): unknown field ids are dropped and
+ * duplicates collapsed (first occurrence wins, across groups) so a layout
+ * written by a different app version degrades instead of failing whole;
+ * a layout without a single surviving field is invalid — the tolerant read
+ * then falls back to the complete default layout, never partially.
+ */
+export const scoreboardLayoutSchema = z
+  .object({
+    groups: z.array(
+      z.object({
+        label: z.string().max(SCOREBOARD_GROUP_LABEL_MAX_LENGTH),
+        fields: z.array(z.unknown()).transform((fields) => fields.filter(isFieldId)),
+      }),
+    ),
+  })
+  .transform(({ groups }): ScoreboardLayout => {
+    const seen = new Set<FieldId>();
+    return {
+      groups: groups.map((group) => ({
+        label: group.label,
+        fields: group.fields.filter((field) => {
+          if (seen.has(field)) {
+            return false;
+          }
+          seen.add(field);
+          return true;
+        }),
+      })),
+    };
+  })
+  .refine((layout) => layout.groups.some((group) => group.fields.length > 0), {
+    message: 'scoreboard layout needs at least one field',
+  });
+
+/** The MVP settings of 01-requirements.md §9 plus the scoreboard fields (ADR-053). */
 export interface Settings {
   readonly theme: Theme;
   /** Absolute CS2 install path; `null` = automatic detection via `steam`. */
@@ -21,6 +105,9 @@ export interface Settings {
   readonly autostart: boolean;
   readonly closeToTray: boolean;
   readonly autoUpdate: boolean;
+  readonly scoreboardEnabled: boolean;
+  readonly scoreboardLayout: ScoreboardLayout;
+  readonly gsiTiming: GsiTiming;
 }
 
 export type SettingsField = keyof Settings;
@@ -32,6 +119,9 @@ export const SETTINGS_FIELDS = [
   'autostart',
   'closeToTray',
   'autoUpdate',
+  'scoreboardEnabled',
+  'scoreboardLayout',
+  'gsiTiming',
 ] as const satisfies readonly SettingsField[];
 
 /**
@@ -47,13 +137,16 @@ export const SETTINGS_FIELD_SCHEMAS = {
   autostart: z.boolean(),
   closeToTray: z.boolean(),
   autoUpdate: z.boolean(),
+  scoreboardEnabled: z.boolean(),
+  scoreboardLayout: scoreboardLayoutSchema,
+  gsiTiming: z.enum(GSI_TIMINGS),
 } satisfies { [K in SettingsField]: z.ZodType<Settings[K]> };
 
 /** The full settings slice: `settings.update` response, event payload, snapshot slice. */
 export const settingsSchema = z.object(SETTINGS_FIELD_SCHEMAS);
 
 /**
- * The `settings.update` request: a partial of the six settings. Absent or
+ * The `settings.update` request: a partial of the settings fields. Absent or
  * `undefined` fields keep their persisted value; an explicit `null` resets
  * `cs2Path`/`gsiPort` to automatic.
  */

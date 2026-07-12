@@ -18,6 +18,7 @@ export const DEFAULT_WINDOW_HEIGHT = 800;
  */
 export function buildMainWindowOptions(
   preloadPath: string,
+  iconPath: string,
   initialBounds?: Rectangle,
 ): BrowserWindowConstructorOptions {
   return {
@@ -28,6 +29,9 @@ export function buildMainWindowOptions(
     minWidth: MIN_WINDOW_WIDTH,
     minHeight: MIN_WINDOW_HEIGHT,
     title: APP_NAME,
+    // Window/taskbar icon in dev and on Linux; the packaged Windows exe uses
+    // the electron-builder `win.icon` embedded in the binary instead.
+    icon: iconPath,
     // Shown on ready-to-show to avoid a white flash.
     show: false,
     webPreferences: {

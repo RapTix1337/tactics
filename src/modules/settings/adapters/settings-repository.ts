@@ -45,6 +45,7 @@ const BOOLEAN_FIELDS = [
   'autostart',
   'closeToTray',
   'autoUpdate',
+  'scoreboardEnabled',
 ] as const satisfies readonly BooleanSettingsField[];
 
 export function createSettingsRepository(
@@ -98,9 +99,11 @@ function readSettings(database: BetterSQLite3Database, logger: Logger): Settings
 }
 
 /**
- * Stored → domain representation: booleans persist as 0/1 integers. Only the
- * exact literals decode; anything else stays as-is so the tolerant parse
- * falls back to the default instead of silently coercing.
+ * Stored → domain representation: booleans persist as 0/1 integers, the
+ * scoreboard layout as a JSON text column (ADR-053). Only the exact
+ * literals/parseable JSON decode; anything else stays as-is so the tolerant
+ * parse falls back to the default instead of silently coercing — for the
+ * layout that is always the **whole** default layout, never a partial one.
  */
 function decodeStoredRow(row: Record<string, unknown>): Record<string, unknown> {
   const decoded = { ...row };
@@ -108,6 +111,15 @@ function decodeStoredRow(row: Record<string, unknown>): Record<string, unknown> 
     const value = decoded[field];
     if (value === 0 || value === 1) {
       decoded[field] = value === 1;
+    }
+  }
+  const layout = decoded.scoreboardLayout;
+  if (typeof layout === 'string') {
+    try {
+      decoded.scoreboardLayout = JSON.parse(layout);
+    } catch {
+      // Unparseable JSON stays a string — the schema rejects it, falling
+      // back to the default layout with a warning.
     }
   }
   return decoded;
@@ -121,5 +133,8 @@ function encodeStoredSettings(settings: Settings): Omit<typeof settingsTable.$in
     autostart: settings.autostart ? 1 : 0,
     closeToTray: settings.closeToTray ? 1 : 0,
     autoUpdate: settings.autoUpdate ? 1 : 0,
+    scoreboardEnabled: settings.scoreboardEnabled ? 1 : 0,
+    scoreboardLayout: JSON.stringify(settings.scoreboardLayout),
+    gsiTiming: settings.gsiTiming,
   };
 }

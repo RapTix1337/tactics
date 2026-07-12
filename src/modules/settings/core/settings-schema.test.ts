@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Settings, SettingsField } from '../../../shared';
+import type { ScoreboardLayout, Settings, SettingsField } from '../../../shared';
 import { SETTINGS_FIELDS } from '../../../shared';
-import { mergeSettings, parseSettings, SETTINGS_DEFAULTS } from './settings-schema';
+import {
+  DEFAULT_SCOREBOARD_LAYOUT,
+  mergeSettings,
+  parseSettings,
+  SETTINGS_DEFAULTS,
+} from './settings-schema';
+
+const storedLayout: ScoreboardLayout = {
+  groups: [{ label: 'Custom', fields: ['kills', 'money'] }],
+};
 
 const validStored: Settings = {
   theme: 'light',
@@ -11,6 +20,9 @@ const validStored: Settings = {
   autostart: true,
   closeToTray: false,
   autoUpdate: false,
+  scoreboardEnabled: false,
+  scoreboardLayout: storedLayout,
+  gsiTiming: 'slow',
 };
 
 describe('SETTINGS_DEFAULTS', () => {
@@ -22,6 +34,19 @@ describe('SETTINGS_DEFAULTS', () => {
       autostart: false,
       closeToTray: true,
       autoUpdate: true,
+      scoreboardEnabled: true,
+      scoreboardLayout: DEFAULT_SCOREBOARD_LAYOUT,
+      gsiTiming: 'default',
+    });
+  });
+
+  it('uses the Designer card layout as the default (ADR-053, design §4)', () => {
+    expect(DEFAULT_SCOREBOARD_LAYOUT).toEqual({
+      groups: [
+        { label: 'Match totals', fields: ['kills', 'deaths', 'assists', 'kd', 'mvps'] },
+        { label: 'Derived', fields: ['hsRate'] },
+        { label: 'Live round state', fields: ['health', 'armor', 'money', 'equipValue'] },
+      ],
     });
   });
 });
@@ -55,7 +80,12 @@ describe('parseSettings', () => {
     ['autostart', null],
     ['closeToTray', 2],
     ['autoUpdate', undefined],
-  ])('falls back only for the invalid field: %s = %j keeps the other five', (field, bad) => {
+    ['scoreboardEnabled', 'yes'],
+    ['scoreboardLayout', '{"groups":[]}'],
+    ['scoreboardLayout', { groups: [{ label: 'Empty', fields: [] }] }],
+    ['gsiTiming', 'turbo'],
+    ['gsiTiming', null],
+  ])('falls back only for the invalid field: %s = %j keeps the others', (field, bad) => {
     const { settings, fallbacks } = parseSettings({ ...validStored, [field]: bad });
 
     expect(fallbacks).toEqual([field]);
@@ -77,6 +107,29 @@ describe('parseSettings', () => {
 
     expect(settings).toEqual(validStored);
     expect(fallbacks).toEqual([]);
+  });
+
+  it('falls back on the whole layout for a partially invalid one — never partially', () => {
+    const { settings, fallbacks } = parseSettings({
+      ...validStored,
+      // First group is fine on its own; the second is malformed (no label).
+      scoreboardLayout: { groups: [{ label: 'Fine', fields: ['kills'] }, { fields: ['deaths'] }] },
+    });
+
+    expect(fallbacks).toEqual(['scoreboardLayout']);
+    expect(settings.scoreboardLayout).toEqual(DEFAULT_SCOREBOARD_LAYOUT);
+  });
+
+  it('normalizes a layout with unknown and duplicate ids instead of falling back', () => {
+    const { settings, fallbacks } = parseSettings({
+      ...validStored,
+      scoreboardLayout: { groups: [{ label: 'A', fields: ['kills', 'kills', 'adr', 'deaths'] }] },
+    });
+
+    expect(fallbacks).toEqual([]);
+    expect(settings.scoreboardLayout).toEqual({
+      groups: [{ label: 'A', fields: ['kills', 'deaths'] }],
+    });
   });
 });
 

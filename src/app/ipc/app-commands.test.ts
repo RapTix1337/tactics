@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { GameState, Logger, Settings, UpdateState } from '../../shared';
+import type { GameState, Logger, ScoreboardState, Settings, UpdateState } from '../../shared';
 import { appGetSnapshot, appOpenExternal, appReportRendererError } from '../../shared';
 import { registerAppCommands } from './app-commands';
 import type { CommandRegistrationDeps } from './register-command';
@@ -19,6 +19,9 @@ const snapshotSettings: Settings = {
   autostart: false,
   closeToTray: true,
   autoUpdate: true,
+  scoreboardEnabled: true,
+  scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
+  gsiTiming: 'default',
 };
 
 const snapshotGameState: GameState = {
@@ -31,6 +34,8 @@ const snapshotUpdateState: UpdateState = {
   version: '1.2.3',
   errorKind: null,
 };
+
+const snapshotScoreboard: ScoreboardState = { active: false };
 
 interface FakeEvent {
   trusted: boolean;
@@ -59,6 +64,7 @@ function setup(): {
     { ...silentLogger, error: rendererError },
     {
       getGameState: () => snapshotGameState,
+      getScoreboardState: () => snapshotScoreboard,
       getSettings: () => snapshotSettings,
       getUpdateState: () => snapshotUpdateState,
     },
@@ -79,6 +85,7 @@ describe('registerAppCommands', () => {
       ok: true,
       data: {
         gameState: snapshotGameState,
+        scoreboard: snapshotScoreboard,
         settings: snapshotSettings,
         updateState: snapshotUpdateState,
       },

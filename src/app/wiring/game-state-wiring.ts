@@ -96,6 +96,10 @@ export function createGameStateWiring(options: GameStateWiringOptions): GameStat
   let running = false;
   let disposed = false;
   let activeDesiredPort: number | null = null;
+  // The timing profile the written config was last verified against. A change
+  // re-renders the config bytes (ADR-051), so — like a port change — it must
+  // flip verification to outdated without a rebind (the intake ignores timing).
+  let activeTiming = options.getSettings().gsiTiming;
   // Start/stop transitions are serialized: a burst of settings updates must
   // never overlap a restart with another (the intake forbids
   // start-while-running). Every step is caught, so the chain never sticks
@@ -163,7 +167,18 @@ export function createGameStateWiring(options: GameStateWiringOptions): GameStat
 
     handleSettingsChanged: (): Promise<void> =>
       enqueue(async () => {
-        if (disposed || desiredPort() === activeDesiredPort) {
+        if (disposed) {
+          return;
+        }
+        // A gsiTiming change alters the config bytes but not the intake, so it
+        // needs its own re-verify (SCB.4, ADR-051) — the port branch below
+        // only re-verifies as a side effect of an actual rebind.
+        const desiredTiming = options.getSettings().gsiTiming;
+        if (desiredTiming !== activeTiming) {
+          activeTiming = desiredTiming;
+          void options.verifyConfigAgainstCurrent();
+        }
+        if (desiredPort() === activeDesiredPort) {
           return;
         }
         // Also the recovery path for an exhausted fallback chain (error

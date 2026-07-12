@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import type { MenuItemConstructorOptions } from 'electron';
 
 /**
@@ -6,13 +8,24 @@ import type { MenuItemConstructorOptions } from 'electron';
  * the window-options.ts pattern.
  */
 
+/** The electron `app` values needed to locate the bundled icon. */
+export interface AppIconLocation {
+  readonly isPackaged: boolean;
+  readonly resourcesPath: string;
+  readonly appPath: string;
+}
+
 /**
- * Placeholder tray icon: a 16×16 solid-orange PNG embedded as a data URL,
- * so no asset pipeline is needed yet. Final art is open question #9 and
- * lands with the packaging work (E19.1).
+ * Resolves the multi-size `icon.ico` used for both the tray and the app icon:
+ * it lives in the repo `build/` folder in dev and is copied next to the
+ * packaged app via electron-builder `extraResources` (electron-builder.yml).
+ * Mirrors the bundled-map-data resolution in app-lifecycle.ts.
  */
-export const TRAY_ICON_DATA_URL =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGklEQVR42mO4N9v0PyWYYdSAUQNGDRguBgAAvxGtH5szLAUAAAAASUVORK5CYII=';
+export function resolveAppIconPath(location: AppIconLocation): string {
+  return location.isPackaged
+    ? join(location.resourcesPath, 'icon.ico')
+    : join(location.appPath, 'build', 'icon.ico');
+}
 
 export interface TrayMenuActions {
   /** Show the main window, recreating it when it was closed to tray. */

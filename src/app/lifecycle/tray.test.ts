@@ -1,8 +1,10 @@
+import { join } from 'node:path';
+
 import type { MenuItem } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { TrayMenuActions } from './tray';
-import { buildTrayMenuTemplate, resolveWindowsClosedAction, TRAY_ICON_DATA_URL } from './tray';
+import { buildTrayMenuTemplate, resolveAppIconPath, resolveWindowsClosedAction } from './tray';
 
 // E17.1 risk note: tray behaviors are hard to unit-test — the pure pieces
 // (setting → close decision, menu template) are covered here; the running
@@ -46,13 +48,16 @@ describe('buildTrayMenuTemplate', () => {
   });
 });
 
-describe('TRAY_ICON_DATA_URL', () => {
-  it('embeds a valid PNG (placeholder until open question #9 resolves)', () => {
-    const commaIndex = TRAY_ICON_DATA_URL.indexOf(',');
-    expect(TRAY_ICON_DATA_URL.slice(0, commaIndex)).toBe('data:image/png;base64');
-    // A decodable PNG signature is what nativeImage.createFromDataURL needs
-    // to not silently produce an empty (invisible) tray icon.
-    const bytes = Buffer.from(TRAY_ICON_DATA_URL.slice(commaIndex + 1), 'base64');
-    expect([...bytes.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+describe('resolveAppIconPath', () => {
+  it('reads the repo build folder in dev', () => {
+    expect(resolveAppIconPath({ isPackaged: false, resourcesPath: '/res', appPath: '/app' })).toBe(
+      join('/app', 'build', 'icon.ico'),
+    );
+  });
+
+  it('reads the bundled resources next to the packaged app', () => {
+    expect(resolveAppIconPath({ isPackaged: true, resourcesPath: '/res', appPath: '/app' })).toBe(
+      join('/res', 'icon.ico'),
+    );
   });
 });

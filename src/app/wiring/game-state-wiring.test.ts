@@ -268,6 +268,30 @@ describe('createGameStateWiring', () => {
     expect(await post(harness.port, fixture('01-menus/001.json'))).toBe(200);
   });
 
+  it('re-verifies the config on a gsiTiming change without rebinding (SCB.4)', async () => {
+    const harness = await startedHarness();
+    // The initial bind already re-verified once; the timing change adds one.
+    harness.verifyConfigAgainstCurrent.mockClear();
+
+    harness.settings.current = { ...harness.settings.current, gsiTiming: 'fast' };
+    await harness.wiring.handleSettingsChanged();
+
+    expect(harness.verifyConfigAgainstCurrent).toHaveBeenCalledTimes(1);
+    // No rebind: the intake keeps serving the same port (timing is config-only).
+    expect(harness.persistEffectivePort).toHaveBeenCalledTimes(1);
+    expect(await post(harness.port, fixture('03-mid-match/001.json'))).toBe(200);
+  });
+
+  it('does not re-verify when a settings change leaves gsiTiming untouched', async () => {
+    const harness = await startedHarness();
+    harness.verifyConfigAgainstCurrent.mockClear();
+
+    harness.settings.current = { ...harness.settings.current, theme: 'light' };
+    await harness.wiring.handleSettingsChanged();
+
+    expect(harness.verifyConfigAgainstCurrent).not.toHaveBeenCalled();
+  });
+
   it('starts on the test-mode port override even when settings fix another port (E20.1)', async () => {
     const started: number[] = [];
     const fakeIntake: GsiIntakeServer = {

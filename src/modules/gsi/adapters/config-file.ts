@@ -1,6 +1,7 @@
 import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import type { GsiTiming } from '../../../shared';
 import { generateConfigContent, GSI_CONFIG_FILE_NAME } from '../core/config-content';
 
 /**
@@ -16,11 +17,16 @@ import { generateConfigContent, GSI_CONFIG_FILE_NAME } from '../core/config-cont
 
 export type GsiConfigVerifyResult = 'ok' | 'missing' | 'outdated';
 
-/** Compares the installed config against the expected content byte for byte. */
+/**
+ * Compares the installed config against the expected content byte for byte. The
+ * `timing` profile (ADR-051) is part of that expectation, so a profile change
+ * alone flips the result to `outdated` and rides the repair-needed flow.
+ */
 export async function verifyConfig(
   cfgDir: string,
   port: number,
   token: string,
+  timing: GsiTiming,
 ): Promise<GsiConfigVerifyResult> {
   let actual: string;
   try {
@@ -31,7 +37,7 @@ export async function verifyConfig(
     }
     throw error;
   }
-  return actual === generateConfigContent(port, token) ? 'ok' : 'outdated';
+  return actual === generateConfigContent(port, token, timing) ? 'ok' : 'outdated';
 }
 
 /**
@@ -40,10 +46,15 @@ export async function verifyConfig(
  * existing file on Windows too). CS2 therefore never observes a partially
  * written config.
  */
-export async function writeConfig(cfgDir: string, port: number, token: string): Promise<void> {
+export async function writeConfig(
+  cfgDir: string,
+  port: number,
+  token: string,
+  timing: GsiTiming,
+): Promise<void> {
   const temporaryPath = join(cfgDir, `${GSI_CONFIG_FILE_NAME}.tmp`);
   try {
-    await writeFile(temporaryPath, generateConfigContent(port, token), 'utf8');
+    await writeFile(temporaryPath, generateConfigContent(port, token, timing), 'utf8');
     await rename(temporaryPath, join(cfgDir, GSI_CONFIG_FILE_NAME));
   } catch (error) {
     // Best effort: never leave a temp file in the user's CS2 cfg directory.

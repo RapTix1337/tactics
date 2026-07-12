@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-import type { Settings, SettingsField } from '../../../shared';
+import type { ScoreboardLayout, Settings, SettingsField } from '../../../shared';
 import { SETTINGS_FIELD_SCHEMAS, SETTINGS_FIELDS } from '../../../shared';
 
 /**
@@ -18,6 +18,19 @@ const FIELD_SCHEMAS: { readonly [K in SettingsField]: z.ZodType<Settings[K]> } =
  * the binding defaults and the tolerant per-field read/merge.
  */
 
+/**
+ * The Designer card's three groups (ADR-053, live-scoreboard 02-design.md
+ * §4). Also the whole-field fallback for an invalid stored layout — the
+ * first nested settings value never falls back partially.
+ */
+export const DEFAULT_SCOREBOARD_LAYOUT: ScoreboardLayout = {
+  groups: [
+    { label: 'Match totals', fields: ['kills', 'deaths', 'assists', 'kd', 'mvps'] },
+    { label: 'Derived', fields: ['hsRate'] },
+    { label: 'Live round state', fields: ['health', 'armor', 'money', 'equipValue'] },
+  ],
+};
+
 /** Binding defaults per 03-technical-design.md §7.3. */
 export const SETTINGS_DEFAULTS: Settings = {
   theme: 'dark',
@@ -26,6 +39,9 @@ export const SETTINGS_DEFAULTS: Settings = {
   autostart: false,
   closeToTray: true,
   autoUpdate: true,
+  scoreboardEnabled: true,
+  scoreboardLayout: DEFAULT_SCOREBOARD_LAYOUT,
+  gsiTiming: 'default',
 };
 
 export interface ParsedSettings {

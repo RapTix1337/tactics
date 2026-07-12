@@ -27,7 +27,7 @@ import type { StorageDatabase } from '../../modules/storage';
 import { openDatabase } from '../../modules/storage';
 import type { UpdaterPort } from '../../modules/updates';
 import { createElectronUpdaterPort, createUpdateService } from '../../modules/updates';
-import { APP_NAME, gameStateChanged, updateChanged } from '../../shared';
+import { APP_NAME, gameStateChanged, scoreboardChanged, updateChanged } from '../../shared';
 import { registerAppCommands } from '../ipc/app-commands';
 import {
   createAppEventPublisher,
@@ -46,6 +46,7 @@ import { registerUpdatesCommands } from '../ipc/updates-commands';
 import { loadBundledMigrations } from '../wiring/bundled-migrations';
 import { createGameStateWiring } from '../wiring/game-state-wiring';
 import { createGsiWiring } from '../wiring/gsi-wiring';
+import { createScoreboardWiring } from '../wiring/scoreboard-wiring';
 import type { LoginItemsPort } from './autostart';
 import { syncAutostart } from './autostart';
 import {
@@ -57,7 +58,7 @@ import { installMainErrorCapture } from './error-capture';
 import { createMainWindow } from './main-window';
 import { createMapImageProtocolHandler, MAP_IMAGE_PROTOCOL_SCHEME } from './map-image-protocol';
 import { DEV_CONTENT_SECURITY_POLICY, shouldAllowNavigation } from './security-policy';
-import { buildTrayMenuTemplate, resolveWindowsClosedAction, TRAY_ICON_DATA_URL } from './tray';
+import { buildTrayMenuTemplate, resolveAppIconPath, resolveWindowsClosedAction } from './tray';
 import { createWindowBoundsTracker, planBoundsRestore } from './window-bounds';
 
 /**
@@ -255,9 +256,25 @@ export function startApp(): void {
         fetchFile: (absolutePath) => net.fetch(pathToFileURL(absolutePath).toString()),
       }),
     );
+    // SCB.7: the scoreboard pipeline shares the intake's payload stream —
+    // created before the game-state wiring so its intake callback can tee.
+    const scoreboardWiring = createScoreboardWiring({
+      statusMachine: gsiWiring.statusMachine,
+      publish: (state) => eventPublisher.publish(scoreboardChanged, state),
+      logger: createLogger('scoreboard'),
+    });
     const gameStateWiring = createGameStateWiring({
       statusMachine: gsiWiring.statusMachine,
-      createIntake: (onPayload) => createGsiIntakeServer({ logger: gsiLogger, onPayload }),
+      createIntake: (onPayload) =>
+        createGsiIntakeServer({
+          logger: gsiLogger,
+          onPayload: (payload) => {
+            // Status machine first: waiting→connected must be committed
+            // before the engine consumes the same payload.
+            onPayload(payload);
+            scoreboardWiring.handlePayload(payload);
+          },
+        }),
       resolveGsiMapName: (rawName) => mapRegistry.resolveGsiMapName(rawName),
       publish: (state) => eventPublisher.publish(gameStateChanged, state),
       getSettings: () => settingsRepository.getSettings(),
@@ -270,6 +287,7 @@ export function startApp(): void {
       logger: gsiLogger,
     });
     app.on('will-quit', () => {
+      scoreboardWiring.dispose();
       gsiWiring.statusMachine.dispose();
       // Best-effort: quit must not wait on socket teardown — the process
       // exit closes the listener either way.
@@ -283,6 +301,7 @@ export function startApp(): void {
       createLogger('renderer'),
       {
         getGameState: () => gameStateWiring.getGameState(),
+        getScoreboardState: () => scoreboardWiring.getScoreboardState(),
         getSettings: () => settingsRepository.getSettings(),
         getUpdateState: () => updateService.getState(),
       },
@@ -346,6 +365,16 @@ export function startApp(): void {
 
     hardenSession(devServerUrl !== undefined);
 
+    // Multi-size icon.ico shared by the window/taskbar icon and the tray. In
+    // dev it reads the repo `build/` folder; packaged it reads the resource
+    // copied via electron-builder `extraResources`. Same resolution as the
+    // bundled map data above.
+    const appIconPath = resolveAppIconPath({
+      isPackaged: app.isPackaged,
+      resourcesPath: process.resourcesPath,
+      appPath: app.getAppPath(),
+    });
+
     // Shows the existing window or recreates it after close-to-tray. A
     // recreated renderer re-runs the snapshot bootstrap on its own (E5.4);
     // main-process state lives on while no window exists (ADR-020/022).
@@ -371,6 +400,7 @@ export function startApp(): void {
         preloadPath: fileURLToPath(new URL('../preload/index.cjs', import.meta.url)),
         rendererHtmlPath: fileURLToPath(new URL('../renderer/index.html', import.meta.url)),
         devServerUrl,
+        iconPath: appIconPath,
         restorePlan: planBoundsRestore(
           operationalStateRepository.getOperationalState().windowBounds,
           workAreas,
@@ -410,7 +440,8 @@ export function startApp(): void {
       }
     });
 
-    tray = new Tray(nativeImage.createFromDataURL(TRAY_ICON_DATA_URL));
+    // Windows picks the 16/32 frame from the multi-size icon.ico for the tray.
+    tray = new Tray(nativeImage.createFromPath(appIconPath));
     tray.setToolTip(APP_NAME);
     tray.setContextMenu(
       Menu.buildFromTemplate(
