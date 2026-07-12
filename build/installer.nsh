@@ -12,6 +12,24 @@
 !define TACTICS_GSI_VALUE "GsiConfigPath"
 !define TACTICS_GSI_CFG_NAME "gamestate_integration_tactics.cfg"
 
+# Windows' game auto-detection can classify TactiCS.exe as a game and apply
+# "Optimizations for windowed games" to its swap chain, which visibly lifts
+# the dark theme's colors (ADR-056). The value below is the same per-exe
+# opt-out the Windows Settings toggle writes; the key holds one value per
+# executable path, so no other program's entry is touched.
+!define DX_GPU_PREFS_KEY "Software\Microsoft\DirectX\UserGpuPreferences"
+!define TACTICS_SWAP_EFFECT_OPT_OUT "SwapEffectUpgradeEnable=0;"
+
+!macro customInstall
+  # Write the opt-out only when no entry for our exe exists — an existing
+  # entry is user-configured (Settings → Display → Graphics) and stays
+  # untouched. Auto-updates re-run this macro and hit the same guard.
+  ReadRegStr $0 HKCU "${DX_GPU_PREFS_KEY}" "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
+  ${if} $0 == ""
+    WriteRegStr HKCU "${DX_GPU_PREFS_KEY}" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "${TACTICS_SWAP_EFFECT_OPT_OUT}"
+  ${endIf}
+!macroend
+
 !macro customUnInstall
   # During an auto-update the old uninstaller runs with --updated: the GSI
   # config must survive and the recorded location stays for a later real
@@ -29,5 +47,12 @@
       ${endIf}
     ${endIf}
     DeleteRegKey HKCU "${TACTICS_REGISTRY_KEY}"
+    # ADR-056: remove the windowed-game-optimizations opt-out — but only if
+    # it still holds exactly the string customInstall wrote; anything else
+    # is user-configured and stays.
+    ReadRegStr $0 HKCU "${DX_GPU_PREFS_KEY}" "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
+    ${if} $0 == "${TACTICS_SWAP_EFFECT_OPT_OUT}"
+      DeleteRegValue HKCU "${DX_GPU_PREFS_KEY}" "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
+    ${endIf}
   ${endIf}
 !macroend

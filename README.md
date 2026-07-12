@@ -95,6 +95,22 @@ Code signing is planned once the project has users; every release is
 built and published by the tag-triggered GitHub Actions release workflow
 ([.github/workflows/release.yml](.github/workflows/release.yml)).
 
+### Troubleshooting: dark theme looks washed out / brighter than expected
+
+Windows' game auto-detection sometimes classifies TactiCS as a game and
+applies "Optimizations for windowed games" to it, which visibly lifts the
+dark theme's colors. The installer opts the app out automatically: it
+writes the per-executable value `SwapEffectUpgradeEnable=0;` for
+`TactiCS.exe` under `HKCU\Software\Microsoft\DirectX\UserGpuPreferences`
+(skipped if you already configured an entry for TactiCS there yourself;
+removed again on uninstall). No other program's entry is affected.
+
+If you still see washed-out colors — for example on an install made
+before this fix shipped, or when running an unpackaged build — fix it
+manually: **Settings → System → Display → Graphics**, add `TactiCS.exe`
+as a desktop app, open its **Options**, tick **"Don't use optimizations
+for windowed games"**, and restart the app.
+
 ## Development Setup
 
 TactiCS targets **Windows first** (ADR-004), so Windows-native development is
