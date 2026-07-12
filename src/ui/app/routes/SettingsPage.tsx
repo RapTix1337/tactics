@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { GsiSetupDialog } from '../../features/gsi-status/GsiSetupDialog';
 import { Cs2PathSection } from '../../features/settings/Cs2PathSection';
 import { GsiPortSection } from '../../features/settings/GsiPortSection';
+import { GsiTimingSection } from '../../features/settings/GsiTimingSection';
 import { ScoreboardSection } from '../../features/settings/ScoreboardSection';
 import { SettingsForm } from '../../features/settings/SettingsForm';
 import { UpdateSection } from '../../features/settings/UpdateSection';
@@ -12,7 +13,8 @@ import { UpdateSection } from '../../features/settings/UpdateSection';
  * `/settings` (06-ui.md §2): the six settings of 01-requirements.md §9 —
  * theme, autostart, close-to-tray and auto-update (E16.1) plus the CS2 path
  * and advanced GSI port sections (E16.2), the scoreboard section (SCB.10),
- * and the updates section (E18.2, REL-02). The repair dialog belongs to the
+ * the GSI timing section (SCB.11), and the updates section (E18.2, REL-02).
+ * The repair dialog belongs to the
  * `gsi-status` feature, so the page composes it (03-technical-design.md
  * §3.1) — the open flag is the only state here.
  */
@@ -30,6 +32,11 @@ export function SettingsPage(): JSX.Element {
         }}
       />
       <GsiPortSection />
+      <GsiTimingSection
+        onRepair={() => {
+          setRepairOpen(true);
+        }}
+      />
       <UpdateSection />
       <GsiSetupDialog open={repairOpen} onOpenChange={setRepairOpen} mode="repair" />
     </div>
