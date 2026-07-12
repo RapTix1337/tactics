@@ -7,6 +7,8 @@ export interface MainWindowTarget {
   preloadPath: string;
   rendererHtmlPath: string;
   devServerUrl: string | undefined;
+  /** Multi-size `icon.ico` for the window/taskbar icon (dev and Linux). */
+  iconPath: string;
   /** Clamped placement to restore (E17.3); `null` opens at the defaults. */
   restorePlan: BoundsRestorePlan | null;
 }
@@ -18,7 +20,7 @@ export interface MainWindowTarget {
  */
 export function createMainWindow(target: MainWindowTarget): BrowserWindow {
   const window = new BrowserWindow(
-    buildMainWindowOptions(target.preloadPath, target.restorePlan?.bounds),
+    buildMainWindowOptions(target.preloadPath, target.iconPath, target.restorePlan?.bounds),
   );
 
   window.once('ready-to-show', () => {

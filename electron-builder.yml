@@ -15,6 +15,10 @@ files:
 extraResources:
   - from: data/maps
     to: data/maps
+  # The app/tray icon: the Windows exe embeds it via `win.icon`, but the tray
+  # loads it at runtime (app-lifecycle.ts), so it must ship as a resource too.
+  - from: build/icon.ico
+    to: icon.ico
 # Auto-update feed and release upload target (ADR-027/035, E19.3). This block
 # is baked into the packaged app as `app-update.yml` — the electron-updater
 # GitHub provider reads it there — and tells the release workflow where to

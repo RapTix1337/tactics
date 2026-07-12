@@ -58,7 +58,7 @@ import { installMainErrorCapture } from './error-capture';
 import { createMainWindow } from './main-window';
 import { createMapImageProtocolHandler, MAP_IMAGE_PROTOCOL_SCHEME } from './map-image-protocol';
 import { DEV_CONTENT_SECURITY_POLICY, shouldAllowNavigation } from './security-policy';
-import { buildTrayMenuTemplate, resolveWindowsClosedAction, TRAY_ICON_DATA_URL } from './tray';
+import { buildTrayMenuTemplate, resolveAppIconPath, resolveWindowsClosedAction } from './tray';
 import { createWindowBoundsTracker, planBoundsRestore } from './window-bounds';
 
 /**
@@ -365,6 +365,16 @@ export function startApp(): void {
 
     hardenSession(devServerUrl !== undefined);
 
+    // Multi-size icon.ico shared by the window/taskbar icon and the tray. In
+    // dev it reads the repo `build/` folder; packaged it reads the resource
+    // copied via electron-builder `extraResources`. Same resolution as the
+    // bundled map data above.
+    const appIconPath = resolveAppIconPath({
+      isPackaged: app.isPackaged,
+      resourcesPath: process.resourcesPath,
+      appPath: app.getAppPath(),
+    });
+
     // Shows the existing window or recreates it after close-to-tray. A
     // recreated renderer re-runs the snapshot bootstrap on its own (E5.4);
     // main-process state lives on while no window exists (ADR-020/022).
@@ -390,6 +400,7 @@ export function startApp(): void {
         preloadPath: fileURLToPath(new URL('../preload/index.cjs', import.meta.url)),
         rendererHtmlPath: fileURLToPath(new URL('../renderer/index.html', import.meta.url)),
         devServerUrl,
+        iconPath: appIconPath,
         restorePlan: planBoundsRestore(
           operationalStateRepository.getOperationalState().windowBounds,
           workAreas,
@@ -429,7 +440,8 @@ export function startApp(): void {
       }
     });
 
-    tray = new Tray(nativeImage.createFromDataURL(TRAY_ICON_DATA_URL));
+    // Windows picks the 16/32 frame from the multi-size icon.ico for the tray.
+    tray = new Tray(nativeImage.createFromPath(appIconPath));
     tray.setToolTip(APP_NAME);
     tray.setContextMenu(
       Menu.buildFromTemplate(
