@@ -24,7 +24,7 @@ import {
 } from './commands';
 import { COMMAND_NAMES, EVENT_DOMAINS } from './contract-names';
 import type { ContractEventDefinitions } from './events';
-import { gameStateChanged, settingsChanged, updateChanged } from './events';
+import { gameStateChanged, scoreboardChanged, settingsChanged, updateChanged } from './events';
 
 describe('contract name lists', () => {
   it('lists exactly the defined commands (both directions, type level)', () => {
@@ -66,6 +66,7 @@ describe('contract name lists', () => {
     expectTypeOf<(typeof EVENT_DOMAINS)[number]>().toEqualTypeOf<keyof ContractEventDefinitions>();
 
     expect(EVENT_DOMAINS).toContain(gameStateChanged.domain);
+    expect(EVENT_DOMAINS).toContain(scoreboardChanged.domain);
     expect(EVENT_DOMAINS).toContain(settingsChanged.domain);
     expect(EVENT_DOMAINS).toContain(updateChanged.domain);
     expect(new Set(EVENT_DOMAINS).size).toBe(EVENT_DOMAINS.length);

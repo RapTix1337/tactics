@@ -8,10 +8,11 @@
  * rhythm, so it is not derivable from the current side anymore.
  */
 
-export type TeamSide = 'CT' | 'T';
+import type { RoundOutcome, TeamSide } from '../../../shared';
 
-/** A round from my team's perspective. */
-export type RoundOutcome = 'won' | 'lost';
+// Lifted into the shared IPC contract by SCB.7; re-exported so the module's
+// internals keep one import site.
+export type { RoundOutcome, TeamSide } from '../../../shared';
 
 function flip(side: TeamSide): TeamSide {
   return side === 'CT' ? 'T' : 'CT';

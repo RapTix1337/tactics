@@ -12,19 +12,21 @@ import {
   profileIdSchema,
   profileNameSchema,
 } from './map-catalog';
+import { scoreboardStateSchema } from './scoreboard-state';
 import { settingsSchema, settingsUpdateSchema } from './settings';
 import { updateStateSchema } from './update-state';
 
 /**
  * `app.getSnapshot` (ADR-022): the renderer's state bootstrap. The response
  * object gains one slice per mirror store with its owning task (settings
- * E8.3, gameState E10.7, updates E18.1).
+ * E8.3, gameState E10.7, updates E18.1, scoreboard SCB.7).
  */
 export const appGetSnapshot = defineCommand(
   'app.getSnapshot',
   z.void(),
   z.object({
     gameState: gameStateSchema,
+    scoreboard: scoreboardStateSchema,
     settings: settingsSchema,
     updateState: updateStateSchema,
   }),

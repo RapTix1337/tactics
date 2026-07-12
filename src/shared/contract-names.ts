@@ -33,6 +33,7 @@ export const COMMAND_NAMES = [
 
 export const EVENT_DOMAINS = [
   'gameState',
+  'scoreboard',
   'settings',
   'update',
 ] as const satisfies readonly (keyof ContractEventDefinitions)[];

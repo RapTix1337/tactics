@@ -9,6 +9,7 @@ type SnapshotResult = CommandResult<AppSnapshot>;
 
 const snapshot: AppSnapshot = {
   gameState: { status: 'waiting', map: { kind: 'none' } },
+  scoreboard: { active: false },
   settings: {
     theme: 'dark',
     cs2Path: null,

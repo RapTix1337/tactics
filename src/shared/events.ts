@@ -1,5 +1,6 @@
 import { defineEvent } from './contract';
 import { gameStateSchema } from './game-state';
+import { scoreboardStateSchema } from './scoreboard-state';
 import { settingsSchema } from './settings';
 import { updateStateSchema } from './update-state';
 
@@ -26,12 +27,21 @@ export const settingsChanged = defineEvent('settings', settingsSchema);
 export const updateChanged = defineEvent('update', updateStateSchema);
 
 /**
+ * `evt:scoreboard.changed` (live-scoreboard 02-design.md §3.1, ADR-052):
+ * the full new scoreboard slice, published by the app wiring on every
+ * structural change the scoreboard engine reports — its change filtering
+ * keeps the frequent GSI posts off the IPC boundary (02-architecture §4.2).
+ */
+export const scoreboardChanged = defineEvent('scoreboard', scoreboardStateSchema);
+
+/**
  * The contract's event definitions, keyed by domain — the counterpart of
  * `ContractCommandDefinitions`; each entry pairs a domain with its
  * `defineEvent` definition.
  */
 export interface ContractEventDefinitions {
   gameState: typeof gameStateChanged;
+  scoreboard: typeof scoreboardChanged;
   settings: typeof settingsChanged;
   update: typeof updateChanged;
 }

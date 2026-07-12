@@ -53,6 +53,7 @@ describe('appGetSnapshot', () => {
     expect(
       appGetSnapshot.responseSchema.safeParse({
         gameState: validGameState,
+        scoreboard: { active: false },
         settings: validSettings,
         updateState: validUpdateState,
       }).success,
@@ -62,6 +63,7 @@ describe('appGetSnapshot', () => {
     expect(
       appGetSnapshot.responseSchema.safeParse({
         gameState: validGameState,
+        scoreboard: { active: false },
         settings: validSettings,
       }).success,
     ).toBe(false);

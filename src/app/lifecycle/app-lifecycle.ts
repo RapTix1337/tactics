@@ -27,7 +27,7 @@ import type { StorageDatabase } from '../../modules/storage';
 import { openDatabase } from '../../modules/storage';
 import type { UpdaterPort } from '../../modules/updates';
 import { createElectronUpdaterPort, createUpdateService } from '../../modules/updates';
-import { APP_NAME, gameStateChanged, updateChanged } from '../../shared';
+import { APP_NAME, gameStateChanged, scoreboardChanged, updateChanged } from '../../shared';
 import { registerAppCommands } from '../ipc/app-commands';
 import {
   createAppEventPublisher,
@@ -46,6 +46,7 @@ import { registerUpdatesCommands } from '../ipc/updates-commands';
 import { loadBundledMigrations } from '../wiring/bundled-migrations';
 import { createGameStateWiring } from '../wiring/game-state-wiring';
 import { createGsiWiring } from '../wiring/gsi-wiring';
+import { createScoreboardWiring } from '../wiring/scoreboard-wiring';
 import type { LoginItemsPort } from './autostart';
 import { syncAutostart } from './autostart';
 import {
@@ -255,9 +256,25 @@ export function startApp(): void {
         fetchFile: (absolutePath) => net.fetch(pathToFileURL(absolutePath).toString()),
       }),
     );
+    // SCB.7: the scoreboard pipeline shares the intake's payload stream —
+    // created before the game-state wiring so its intake callback can tee.
+    const scoreboardWiring = createScoreboardWiring({
+      statusMachine: gsiWiring.statusMachine,
+      publish: (state) => eventPublisher.publish(scoreboardChanged, state),
+      logger: createLogger('scoreboard'),
+    });
     const gameStateWiring = createGameStateWiring({
       statusMachine: gsiWiring.statusMachine,
-      createIntake: (onPayload) => createGsiIntakeServer({ logger: gsiLogger, onPayload }),
+      createIntake: (onPayload) =>
+        createGsiIntakeServer({
+          logger: gsiLogger,
+          onPayload: (payload) => {
+            // Status machine first: waiting→connected must be committed
+            // before the engine consumes the same payload.
+            onPayload(payload);
+            scoreboardWiring.handlePayload(payload);
+          },
+        }),
       resolveGsiMapName: (rawName) => mapRegistry.resolveGsiMapName(rawName),
       publish: (state) => eventPublisher.publish(gameStateChanged, state),
       getSettings: () => settingsRepository.getSettings(),
@@ -270,6 +287,7 @@ export function startApp(): void {
       logger: gsiLogger,
     });
     app.on('will-quit', () => {
+      scoreboardWiring.dispose();
       gsiWiring.statusMachine.dispose();
       // Best-effort: quit must not wait on socket teardown — the process
       // exit closes the listener either way.
@@ -283,6 +301,7 @@ export function startApp(): void {
       createLogger('renderer'),
       {
         getGameState: () => gameStateWiring.getGameState(),
+        getScoreboardState: () => scoreboardWiring.getScoreboardState(),
         getSettings: () => settingsRepository.getSettings(),
         getUpdateState: () => updateService.getState(),
       },

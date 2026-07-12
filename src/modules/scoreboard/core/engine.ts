@@ -1,4 +1,10 @@
-import type { Logger } from '../../../shared';
+import type {
+  Logger,
+  ScoreboardPhase,
+  ScoreboardPlayerState,
+  ScoreboardState,
+  ScoreboardTeamState,
+} from '../../../shared';
 import { createHsAccumulator } from './accumulator';
 import { isOwnPlayer } from './identity';
 import type {
@@ -11,12 +17,7 @@ import type {
   LiveMatchTeam,
 } from './input';
 import { resolveModeRules } from './modes';
-import {
-  deriveFirstHalfSide,
-  deriveRoundHistory,
-  type RoundOutcome,
-  type TeamSide,
-} from './round-history';
+import { deriveFirstHalfSide, deriveRoundHistory, type TeamSide } from './round-history';
 
 /**
  * The scoreboard state machine (ADR-052, design §2.2): consumes
@@ -27,56 +28,18 @@ import {
  * changes rarely).
  */
 
-/** The five display phases of the slice (design §3.2). */
-export type ScoreboardPhase = 'warmup' | 'freezetime' | 'live' | 'bomb-planted' | 'round-over';
-
-export type { RoundOutcome, TeamSide } from './round-history';
-
-export interface ScoreboardTeamState {
-  readonly side: TeamSide;
-  readonly score: number | null;
-  readonly lossStreak: number | null;
-  readonly timeoutsRemaining: number | null;
-}
-
-export interface ScoreboardPlayerState {
-  readonly kills: number | null;
-  readonly assists: number | null;
-  readonly deaths: number | null;
-  readonly mvps: number | null;
-  readonly score: number | null;
-  readonly health: number | null;
-  readonly armor: number | null;
-  readonly helmet: boolean | null;
-  readonly money: number | null;
-  readonly equipValue: number | null;
-  readonly roundKills: number | null;
-  readonly roundHsKills: number | null;
-}
-
-export interface ScoreboardDerivedState {
-  readonly approximate: boolean;
-  readonly hsRatePercent: number | null;
-}
-
-/**
- * The outgoing slice — deliberately free of SteamIDs, player names, and team
- * names (ADR-030/052); SCB.7 lifts this shape into the shared IPC contract.
- */
-export type ScoreboardState =
-  | { readonly active: false }
-  | {
-      readonly active: true;
-      readonly phase: ScoreboardPhase;
-      /** 1-based display round (`map.round` counts completed rounds). */
-      readonly roundNumber: number;
-      readonly halftimeAfter: number;
-      readonly myTeam: ScoreboardTeamState;
-      readonly enemyTeam: ScoreboardTeamState;
-      readonly roundHistory: readonly RoundOutcome[];
-      readonly me: ScoreboardPlayerState;
-      readonly derived: ScoreboardDerivedState;
-    };
+// The outgoing slice IS the shared IPC contract shape (lifted there by
+// SCB.7, one source of truth) — re-exported so module consumers and tests
+// keep importing it from the module surface.
+export type {
+  RoundOutcome,
+  ScoreboardDerivedState,
+  ScoreboardPhase,
+  ScoreboardPlayerState,
+  ScoreboardState,
+  ScoreboardTeamState,
+  TeamSide,
+} from '../../../shared';
 
 export interface ScoreboardEngine {
   /** Feeds one validated observation (mapped by the app wiring, SCB.7). */
