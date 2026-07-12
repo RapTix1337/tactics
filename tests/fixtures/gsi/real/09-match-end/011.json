@@ -1,0 +1,124 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783805409
+  },
+  "map": {
+    "mode": "competitive",
+    "name": "de_fachwerk",
+    "phase": "live",
+    "round": 23,
+    "team_ct": {
+      "score": 11,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 12,
+      "consecutive_round_losses": 1,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0,
+    "round_wins": {
+      "1": "t_win_elimination",
+      "2": "t_win_bomb",
+      "3": "ct_win_defuse",
+      "4": "ct_win_elimination",
+      "5": "t_win_elimination",
+      "6": "t_win_elimination",
+      "7": "ct_win_elimination",
+      "8": "ct_win_elimination",
+      "9": "t_win_elimination",
+      "10": "t_win_elimination",
+      "11": "ct_win_elimination",
+      "12": "ct_win_elimination",
+      "13": "t_win_elimination",
+      "14": "t_win_elimination",
+      "15": "ct_win_elimination",
+      "16": "t_win_elimination",
+      "17": "t_win_elimination",
+      "18": "ct_win_elimination",
+      "19": "t_win_elimination",
+      "20": "ct_win_elimination",
+      "21": "ct_win_elimination",
+      "22": "t_win_elimination",
+      "23": "ct_win_defuse"
+    }
+  },
+  "round": {
+    "phase": "over",
+    "win_team": "CT",
+    "bomb": "defused"
+  },
+  "player": {
+    "steamid": "76561190000000001",
+    "name": "Player",
+    "observer_slot": 0,
+    "team": "CT",
+    "activity": "playing",
+    "state": {
+      "health": 95,
+      "armor": 100,
+      "helmet": true,
+      "defusekit": true,
+      "flashed": 0,
+      "smoked": 55,
+      "burning": 0,
+      "money": 4100,
+      "round_kills": 1,
+      "round_killhs": 1,
+      "equip_value": 6650
+    },
+    "match_stats": {
+      "kills": 23,
+      "assists": 4,
+      "deaths": 16,
+      "mvps": 5,
+      "score": 56
+    }
+  },
+  "previously": {
+    "map": {
+      "round": 22,
+      "team_ct": {
+        "score": 10,
+        "consecutive_round_losses": 1
+      },
+      "team_t": {
+        "consecutive_round_losses": 0
+      }
+    },
+    "round": {
+      "phase": "live",
+      "bomb": "planted"
+    },
+    "player": {
+      "state": {
+        "smoked": 227,
+        "money": 300
+      },
+      "match_stats": {
+        "mvps": 4,
+        "score": 54
+      }
+    }
+  },
+  "added": {
+    "map": {
+      "round_wins": {
+        "23": true
+      }
+    },
+    "round": {
+      "win_team": true
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

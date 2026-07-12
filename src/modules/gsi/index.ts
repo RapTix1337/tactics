@@ -16,7 +16,15 @@ export {
   type GsiConfigLocationRecorder,
 } from './adapters/windows/config-location-registry';
 export { generateConfigContent, GSI_CONFIG_FILE_NAME } from './core/config-content';
-export type { GsiPayloadSubset } from './core/payload-schema';
+export type {
+  GsiMapState,
+  GsiPayloadSubset,
+  GsiPlayerMatchStats,
+  GsiPlayerRoundState,
+  GsiPlayerState,
+  GsiRoundState,
+  GsiTeamState,
+} from './core/payload-schema';
 export {
   createGsiStatusMachine,
   type GsiState,

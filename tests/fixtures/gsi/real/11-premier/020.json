@@ -1,0 +1,100 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783809274
+  },
+  "map": {
+    "mode": "competitive",
+    "name": "de_cache",
+    "phase": "live",
+    "round": 15,
+    "team_ct": {
+      "score": 10,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 3,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 5,
+      "consecutive_round_losses": 4,
+      "timeouts_remaining": 3,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0,
+    "round_wins": {
+      "1": "ct_win_defuse",
+      "2": "ct_win_elimination",
+      "3": "ct_win_elimination",
+      "4": "t_win_bomb",
+      "5": "t_win_bomb",
+      "6": "t_win_elimination",
+      "7": "ct_win_elimination",
+      "8": "t_win_elimination",
+      "9": "t_win_elimination",
+      "10": "ct_win_defuse",
+      "11": "t_win_elimination",
+      "12": "t_win_elimination",
+      "13": "ct_win_elimination",
+      "14": "ct_win_elimination",
+      "15": "ct_win_elimination"
+    }
+  },
+  "round": {
+    "phase": "over",
+    "win_team": "CT"
+  },
+  "player": {
+    "steamid": "76561190000000001",
+    "name": "Player",
+    "observer_slot": 2,
+    "team": "CT",
+    "activity": "playing",
+    "state": {
+      "health": 34,
+      "armor": 93,
+      "helmet": true,
+      "flashed": 0,
+      "smoked": 0,
+      "burning": 0,
+      "money": 4050,
+      "round_kills": 1,
+      "round_killhs": 1,
+      "equip_value": 4800
+    },
+    "match_stats": {
+      "kills": 16,
+      "assists": 1,
+      "deaths": 7,
+      "mvps": 2,
+      "score": 42
+    }
+  },
+  "previously": {
+    "player": {
+      "steamid": "76561190000000000",
+      "name": "Player",
+      "observer_slot": 1,
+      "state": {
+        "health": 0,
+        "armor": 0,
+        "helmet": false,
+        "money": 6550,
+        "round_kills": 0,
+        "round_killhs": 0,
+        "equip_value": 5800
+      },
+      "match_stats": {
+        "assists": 3,
+        "deaths": 10,
+        "mvps": 3,
+        "score": 40
+      }
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

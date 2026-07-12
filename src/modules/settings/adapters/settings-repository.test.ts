@@ -156,8 +156,132 @@ describe('updateSettings', () => {
   });
 });
 
+describe('scoreboard and timing fields (SCB.3, ADR-053)', () => {
+  it('round-trips the layout JSON and enum fields across close and reopen', () => {
+    const databasePath = newDatabasePath();
+    const layout = {
+      groups: [
+        { label: 'Mine', fields: ['kills', 'hsRate'] },
+        { label: 'Cash', fields: ['money'] },
+      ],
+    } as const;
+    const first = createSettingsRepository(openPort(databasePath), silentLogger);
+    first.updateSettings({ scoreboardEnabled: false, scoreboardLayout: layout, gsiTiming: 'fast' });
+    for (const connection of connections.splice(0)) {
+      connection.close();
+    }
+
+    const second = createSettingsRepository(openPort(databasePath), silentLogger);
+
+    expect(second.getSettings()).toEqual({
+      ...SETTINGS_DEFAULTS,
+      scoreboardEnabled: false,
+      scoreboardLayout: layout,
+      gsiTiming: 'fast',
+    });
+  });
+
+  it('falls back to the whole default layout on unparseable JSON (logged)', () => {
+    const warn = vi.fn();
+    const port = openPort();
+    const repository = createSettingsRepository(port, { ...silentLogger, warn });
+    repository.updateSettings({ theme: 'light' });
+    port.drizzle.run(sql`update settings set scoreboard_layout = '{"groups": [broken'`);
+
+    const settings = repository.getSettings();
+
+    expect(settings.scoreboardLayout).toEqual(SETTINGS_DEFAULTS.scoreboardLayout);
+    expect(settings.theme).toBe('light');
+    expect(warn).toHaveBeenCalledWith('invalid stored settings value replaced by its default', {
+      field: 'scoreboardLayout',
+    });
+  });
+
+  it('falls back to the whole default layout on valid JSON with an invalid shape', () => {
+    const warn = vi.fn();
+    const port = openPort();
+    const repository = createSettingsRepository(port, { ...silentLogger, warn });
+    repository.updateSettings({ theme: 'light' });
+    // Parses as JSON but has zero fields — must never survive partially.
+    port.drizzle.run(sql`update settings set scoreboard_layout = '{"groups":[]}'`);
+
+    expect(repository.getSettings().scoreboardLayout).toEqual(SETTINGS_DEFAULTS.scoreboardLayout);
+    expect(warn).toHaveBeenCalledWith('invalid stored settings value replaced by its default', {
+      field: 'scoreboardLayout',
+    });
+  });
+
+  it('falls back to the default timing on an unknown profile value', () => {
+    const warn = vi.fn();
+    const port = openPort();
+    const repository = createSettingsRepository(port, { ...silentLogger, warn });
+    repository.updateSettings({ gsiTiming: 'fast' });
+    port.drizzle.run(sql`update settings set gsi_timing = 'turbo'`);
+
+    expect(repository.getSettings().gsiTiming).toBe(SETTINGS_DEFAULTS.gsiTiming);
+    expect(warn).toHaveBeenCalledWith('invalid stored settings value replaced by its default', {
+      field: 'gsiTiming',
+    });
+  });
+
+  it('rejects an invalid layout update with TypeError and persists nothing', () => {
+    const repository = createSettingsRepository(openPort(), silentLogger);
+
+    // Type-valid but runtime-invalid: zero fields fails the schema's refine.
+    expect(() => repository.updateSettings({ scoreboardLayout: { groups: [] } })).toThrow(
+      TypeError,
+    );
+    expect(repository.getSettings().scoreboardLayout).toEqual(SETTINGS_DEFAULTS.scoreboardLayout);
+  });
+});
+
+describe('v1.0 database upgrade (migration 0003)', () => {
+  it('adds the three columns with real defaults — existing values kept, no warnings', () => {
+    const warn = vi.fn();
+    const connection = new Database(':memory:');
+    connections.push(connection);
+    const files = readdirSync(MIGRATIONS_DIRECTORY)
+      .filter((name) => name.endsWith('.sql'))
+      .sort();
+    const preScoreboard = files.filter((name) => !name.startsWith('0003'));
+    expect(preScoreboard.length).toBe(files.length - 1);
+    for (const file of preScoreboard) {
+      connection.exec(readFileSync(join(MIGRATIONS_DIRECTORY, file), 'utf8'));
+    }
+    // A settled v1.0 row written before the scoreboard columns existed.
+    connection
+      .prepare(
+        `insert into settings (id, theme, cs2_path, gsi_port, autostart, close_to_tray, auto_update)
+         values (1, 'light', 'C:\\Games\\CS2', 42731, 1, 0, 1)`,
+      )
+      .run();
+
+    for (const file of files.filter((name) => name.startsWith('0003'))) {
+      connection.exec(readFileSync(join(MIGRATIONS_DIRECTORY, file), 'utf8'));
+    }
+    const typedAccess = drizzle(connection);
+    const repository = createSettingsRepository(
+      {
+        drizzle: typedAccess,
+        withTransaction: (fn) => connection.transaction(() => fn(typedAccess))(),
+      },
+      { ...silentLogger, warn },
+    );
+
+    expect(repository.getSettings()).toEqual({
+      ...SETTINGS_DEFAULTS,
+      theme: 'light',
+      cs2Path: 'C:\\Games\\CS2',
+      gsiPort: 42731,
+      autostart: true,
+      closeToTray: false,
+    });
+    expect(warn).not.toHaveBeenCalled();
+  });
+});
+
 describe('tolerant reads of a corrupted row', () => {
-  it('falls back per field: one bad column keeps the other five', () => {
+  it('falls back per field: one bad column keeps the others', () => {
     const warn = vi.fn();
     const port = openPort();
     const repository = createSettingsRepository(port, { ...silentLogger, warn });
@@ -172,12 +296,10 @@ describe('tolerant reads of a corrupted row', () => {
     const settings = repository.getSettings();
 
     expect(settings).toEqual({
-      theme: SETTINGS_DEFAULTS.theme,
+      ...SETTINGS_DEFAULTS,
       cs2Path: 'C:\\Games\\CS2',
       gsiPort: 42731,
       autostart: true,
-      closeToTray: SETTINGS_DEFAULTS.closeToTray,
-      autoUpdate: SETTINGS_DEFAULTS.autoUpdate,
     });
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith('invalid stored settings value replaced by its default', {
@@ -213,7 +335,7 @@ describe('boolean codec coverage', () => {
   it('covers exactly the boolean settings fields', () => {
     // Completeness direction of the satisfies-pin in settings-repository.ts.
     expectTypeOf<BooleanSettingsField>().toEqualTypeOf<
-      'autostart' | 'closeToTray' | 'autoUpdate'
+      'autostart' | 'closeToTray' | 'autoUpdate' | 'scoreboardEnabled'
     >();
   });
 });

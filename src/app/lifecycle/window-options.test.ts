@@ -14,7 +14,12 @@ import {
 // running-app evidence is the E2E spike's job (E4.1).
 describe('buildMainWindowOptions', () => {
   const preloadPath = '/out/preload/index.cjs';
-  const options = buildMainWindowOptions(preloadPath);
+  const iconPath = '/app/build/icon.ico';
+  const options = buildMainWindowOptions(preloadPath, iconPath);
+
+  it('sets the window/taskbar icon to the resolved icon path', () => {
+    expect(options.icon).toBe(iconPath);
+  });
 
   it('pins all ADR-025 webPreferences hardening flags', () => {
     expect(options.webPreferences).toMatchObject({
@@ -50,7 +55,7 @@ describe('buildMainWindowOptions', () => {
   // E17.3: the restored placement replaces the default one; everything else
   // (hardening, min size, hidden start) is unaffected by the restore path.
   it('applies restored initial bounds while keeping the hardening intact', () => {
-    const restored = buildMainWindowOptions(preloadPath, {
+    const restored = buildMainWindowOptions(preloadPath, iconPath, {
       x: 200,
       y: 120,
       width: 1400,

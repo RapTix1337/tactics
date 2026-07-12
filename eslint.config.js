@@ -7,7 +7,16 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
 
-const DOMAIN_MODULES = ['steam', 'gsi', 'maps', 'settings', 'logging', 'storage', 'updates'];
+const DOMAIN_MODULES = [
+  'steam',
+  'gsi',
+  'maps',
+  'scoreboard',
+  'settings',
+  'logging',
+  'storage',
+  'updates',
+];
 
 // Module boundaries per ADR-021/026 (03-technical-design.md §1) — tooling,
 // not convention. Verified by `pnpm lint:boundaries`.

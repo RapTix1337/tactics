@@ -10,5 +10,6 @@ export * from './external-urls';
 export * from './game-state';
 export * from './logger';
 export * from './map-catalog';
+export * from './scoreboard-state';
 export * from './settings';
 export * from './update-state';

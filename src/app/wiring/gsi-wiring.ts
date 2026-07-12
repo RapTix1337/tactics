@@ -84,6 +84,9 @@ export function createGsiWiring(options: GsiWiringOptions): GsiWiring {
         options.getSettings().gsiPort ??
         options.getOperationalState().effectiveGsiPort ??
         DEFAULT_GSI_PORT,
+      // The config content's timing profile (ADR-051) — a plain settings read;
+      // a change rides the same repair-needed path as a port/token change.
+      getSetupTiming: () => options.getSettings().gsiTiming,
       getAuthToken: (): string => options.getOperationalState().gsiToken,
       getConfigPath: (cfgDir: string): string => join(cfgDir, GSI_CONFIG_FILE_NAME),
       verifyConfig,

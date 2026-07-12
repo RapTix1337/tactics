@@ -165,7 +165,9 @@ export function seedGsiSetup(userDataDir: string, port: number): void {
   mkdirSync(cfgDir, { recursive: true });
   writeFileSync(
     join(cfgDir, GSI_CONFIG_FILE_NAME),
-    generateConfigContent(port, FIXTURE_GSI_TOKEN),
+    // The seeded settings row's gsi_timing DDL default is 'default' (migration
+    // 0003), so the startup verify regenerates exactly this profile's bytes.
+    generateConfigContent(port, FIXTURE_GSI_TOKEN, 'default'),
     'utf8',
   );
 

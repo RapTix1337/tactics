@@ -192,6 +192,10 @@ describe('createGsiIntakeServer', () => {
     expect(onPayload).toHaveBeenCalledExactlyOnceWith({
       providerTimestamp: 42,
       mapName: 'de_mirage',
+      providerSteamId: null,
+      map: { mode: null, phase: null, round: null, teamCt: null, teamT: null, roundWins: null },
+      round: null,
+      player: null,
     });
   });
 

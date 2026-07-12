@@ -9,6 +9,7 @@ type SnapshotResult = CommandResult<AppSnapshot>;
 
 const snapshot: AppSnapshot = {
   gameState: { status: 'waiting', map: { kind: 'none' } },
+  scoreboard: { active: false },
   settings: {
     theme: 'dark',
     cs2Path: null,
@@ -16,6 +17,9 @@ const snapshot: AppSnapshot = {
     autostart: false,
     closeToTray: true,
     autoUpdate: true,
+    scoreboardEnabled: true,
+    scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
+    gsiTiming: 'default',
   },
   updateState: { status: 'idle', version: null, errorKind: null },
 };

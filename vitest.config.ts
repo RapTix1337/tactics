@@ -7,8 +7,9 @@ import { defineConfig } from 'vitest/config';
 // returns the three-target main/preload/renderer shape), so unit-test config
 // lives here.
 //
-// Includes are limited to src/ (colocated *.test.ts(x), CLAUDE.md §7);
-// tests/ holds only E2E tests and fixtures and is excluded structurally.
+// Includes are limited to src/ (colocated *.test.ts(x), CLAUDE.md §7) plus
+// the scripts/ sanitizer exception below; tests/ holds only E2E tests and
+// fixtures and is excluded structurally.
 export default defineConfig({
   test: {
     projects: [
@@ -16,7 +17,9 @@ export default defineConfig({
         test: {
           name: 'node',
           environment: 'node',
-          include: ['src/{app,modules,shared}/**/*.test.{ts,tsx}'],
+          // scripts/: dev tooling stays untested by default; the corpus
+          // sanitizer is the deliberate exception (ADR-030 guarantee, SCB.1).
+          include: ['src/{app,modules,shared}/**/*.test.{ts,tsx}', 'scripts/**/*.test.mjs'],
         },
       },
       {

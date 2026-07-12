@@ -1,0 +1,111 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783809055
+  },
+  "map": {
+    "mode": "competitive",
+    "name": "de_cache",
+    "phase": "intermission",
+    "round": 12,
+    "team_ct": {
+      "score": 5,
+      "consecutive_round_losses": 3,
+      "timeouts_remaining": 3,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 7,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 3,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0,
+    "round_wins": {
+      "1": "ct_win_defuse",
+      "2": "ct_win_elimination",
+      "3": "ct_win_elimination",
+      "4": "t_win_bomb",
+      "5": "t_win_bomb",
+      "6": "t_win_elimination",
+      "7": "ct_win_elimination",
+      "8": "t_win_elimination",
+      "9": "t_win_elimination",
+      "10": "ct_win_defuse",
+      "11": "t_win_elimination",
+      "12": "t_win_elimination"
+    }
+  },
+  "round": {
+    "phase": "over",
+    "win_team": "T"
+  },
+  "player": {
+    "steamid": "76561190000000001",
+    "name": "Player",
+    "observer_slot": 7,
+    "team": "T",
+    "activity": "playing",
+    "state": {
+      "health": 45,
+      "armor": 84,
+      "helmet": true,
+      "flashed": 0,
+      "smoked": 0,
+      "burning": 0,
+      "money": 10000,
+      "round_kills": 3,
+      "round_killhs": 2,
+      "equip_value": 5100
+    },
+    "match_stats": {
+      "kills": 14,
+      "assists": 0,
+      "deaths": 6,
+      "mvps": 2,
+      "score": 37
+    }
+  },
+  "previously": {
+    "map": {
+      "phase": "live",
+      "round": 11,
+      "team_ct": {
+        "consecutive_round_losses": 2
+      },
+      "team_t": {
+        "score": 6
+      }
+    },
+    "round": {
+      "phase": "live",
+      "bomb": "planted"
+    },
+    "player": {
+      "state": {
+        "money": 6450,
+        "round_kills": 2
+      },
+      "match_stats": {
+        "kills": 13,
+        "mvps": 1
+      }
+    }
+  },
+  "added": {
+    "map": {
+      "round_wins": {
+        "12": true
+      }
+    },
+    "round": {
+      "win_team": true
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

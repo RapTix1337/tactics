@@ -1,0 +1,45 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783805963
+  },
+  "player": {
+    "steamid": "76561190000000000",
+    "name": "Player",
+    "activity": "menu"
+  },
+  "previously": {
+    "map": true,
+    "round": true,
+    "player": {
+      "observer_slot": 0,
+      "team": "CT",
+      "activity": "playing",
+      "state": {
+        "health": 100,
+        "armor": 98,
+        "helmet": false,
+        "flashed": 0,
+        "smoked": 0,
+        "burning": 0,
+        "money": 50,
+        "round_kills": 0,
+        "round_killhs": 0,
+        "equip_value": 3750
+      },
+      "match_stats": {
+        "kills": 3,
+        "assists": 0,
+        "deaths": 3,
+        "mvps": 3,
+        "score": 4
+      }
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

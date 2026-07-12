@@ -1,22 +1,38 @@
-// GSI capture tool (dev tooling, not app code — E10.1, risk T1): listens for
-// CS2 Game State Integration POSTs and dumps each payload as a pretty-printed
-// JSON file into the fixture corpus, sorted into the scenario selected via
-// stdin. Payloads are sanitized BEFORE they touch the disk (ADR-030): steamid
-// values and auth tokens are replaced with placeholders, player sections are
-// dropped entirely. Recording instructions: tests/fixtures/gsi/README.md.
+// GSI capture tool (dev tooling, not app code — E10.1/SCB.1, risk T1):
+// listens for CS2 Game State Integration POSTs and dumps each payload as a
+// pretty-printed JSON file into the fixture corpus, sorted into the scenario
+// selected via stdin. Payloads are sanitized BEFORE they touch the disk
+// (ADR-030, see gsi-sanitize.mjs): steamids, auth tokens, player names, and
+// clan tags are replaced with placeholders; allplayers sections are dropped.
+// Recording instructions: tests/fixtures/gsi/README.md.
 //
 // Usage: node scripts/capture-gsi.mjs [--port <n>] [--out <dir>]
 //   --port  listen port (default 42730, matching the capture cfg)
 //   --out   corpus root (default tests/fixtures/gsi/real)
-//   keys 1-5 switch the active scenario, q stops the capture
-import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+//   scenario keys: see SCENARIO_KEYS below, q stops the capture
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const SCENARIOS = ['01-menus', '02-map-load', '03-mid-match', '04-map-change', '05-game-exit'];
-const STEAMID_PLACEHOLDER = '76561190000000000';
-const TOKEN_PLACEHOLDER = 'REDACTED';
+import { createCoverageTracker } from './gsi-coverage.mjs';
+import { sanitize } from './gsi-sanitize.mjs';
+
+const SCENARIOS = [
+  '01-menus',
+  '02-map-load',
+  '03-mid-match',
+  '04-map-change',
+  '05-game-exit',
+  '06-comp-rounds',
+  '07-dead-spectate',
+  '08-halftime-swap',
+  '09-match-end',
+  '10-wingman',
+  '11-premier',
+];
+// One key per scenario, in order: 1–9, then 0, then letters.
+const SCENARIO_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a'];
 // Generous safety cap for a localhost dev tool; the app's real per-request
 // limit is defined by the intake adapter (E10.4), not here.
 const MAX_BODY_BYTES = 10 * 1024 * 1024;
@@ -36,6 +52,33 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 
 let scenario = SCENARIOS[0];
 const counters = new Map();
+const coverage = createCoverageTracker();
+
+// The recording spans multiple script runs (and CS2 restarts): resume the
+// coverage from everything already stored, so the counter always reflects
+// the whole corpus, not just this session. Works on sanitized files because
+// the own/foreign steamid placeholders keep the dead-spectate distinction.
+const seedCoverageFromDisk = () => {
+  if (!existsSync(outRoot)) {
+    return;
+  }
+  for (const entry of readdirSync(outRoot)) {
+    const dir = join(outRoot, entry);
+    if (!statSync(dir).isDirectory()) {
+      continue;
+    }
+    for (const file of readdirSync(dir)) {
+      if (!file.endsWith('.json')) {
+        continue;
+      }
+      try {
+        coverage.observe(JSON.parse(readFileSync(join(dir, file), 'utf8')));
+      } catch {
+        console.warn(`coverage seeding skipped unreadable ${join(entry, file)}`);
+      }
+    }
+  }
+};
 
 const nextSequence = (dir) => {
   if (!counters.has(dir)) {
@@ -50,30 +93,39 @@ const nextSequence = (dir) => {
   return next;
 };
 
-// Removes everything the corpus must never contain (ADR-030): any steamid
-// value, any auth token, and — defense in depth, the capture cfg subscribes
-// only provider + map — any player section CS2 might send anyway.
-const sanitize = (value) => {
-  if (Array.isArray(value)) {
-    return value.map(sanitize);
+// One-line live feedback per payload so the recorder can verify a transition
+// (mode string, round phase, the dead-spectate player flip) was actually
+// captured — from the RAW payload, but only ADR-030-safe derivations: the
+// own/other verdict compares steamids transiently, no id or name is printed.
+const describePayload = (payload) => {
+  if (payload === null || typeof payload !== 'object') {
+    return '(non-object payload)';
   }
-  if (value === null || typeof value !== 'object') {
-    return value;
+  const map = typeof payload.map === 'object' && payload.map !== null ? payload.map : undefined;
+  const round =
+    typeof payload.round === 'object' && payload.round !== null ? payload.round : undefined;
+  const player =
+    typeof payload.player === 'object' && payload.player !== null ? payload.player : undefined;
+  const provider =
+    typeof payload.provider === 'object' && payload.provider !== null
+      ? payload.provider
+      : undefined;
+  const parts = [];
+  if (map) {
+    parts.push(`${map.name ?? '(map without name)'} ${map.mode ?? '?'}/${map.phase ?? '?'}`);
+    parts.push(`r${map.round ?? '?'}`);
+  } else {
+    parts.push('(no map section)');
   }
-  const result = {};
-  for (const [key, entry] of Object.entries(value)) {
-    if (key === 'player' || key === 'allplayers') {
-      continue;
-    }
-    if (key === 'steamid') {
-      result[key] = typeof entry === 'string' ? STEAMID_PLACEHOLDER : entry;
-    } else if (key === 'auth' && entry !== null && typeof entry === 'object') {
-      result[key] = Object.fromEntries(Object.keys(entry).map((k) => [k, TOKEN_PLACEHOLDER]));
-    } else {
-      result[key] = sanitize(entry);
-    }
+  if (round) {
+    parts.push(round.bomb === 'planted' ? `${round.phase ?? '?'}+bomb` : `${round.phase ?? '?'}`);
   }
-  return result;
+  if (player) {
+    parts.push(player.steamid === provider?.steamid ? 'player:own' : 'player:other');
+  } else {
+    parts.push('no-player');
+  }
+  return parts.join(' ');
 };
 
 const server = createServer((request, response) => {
@@ -100,21 +152,27 @@ const server = createServer((request, response) => {
       console.warn(`[${scenario}] unparsable payload dropped (${size} bytes)`);
       return;
     }
+    const summary = describePayload(payload);
+    const modeCoverage = coverage.observe(payload);
     const sanitized = sanitize(payload);
     const dir = join(outRoot, scenario);
     const file = join(dir, `${String(nextSequence(dir)).padStart(3, '0')}.json`);
     writeFileSync(file, `${JSON.stringify(sanitized, null, 2)}\n`);
-    const mapName =
-      sanitized !== null && typeof sanitized === 'object' && typeof sanitized.map === 'object'
-        ? (sanitized.map?.name ?? '(map section without name)')
-        : '(no map section)';
-    console.log(`[${scenario}] ${mapName} -> ${file}`);
+    console.log(
+      `[${scenario}] ${summary} -> ${file}${modeCoverage === null ? '' : ` | ${modeCoverage}`}`,
+    );
   });
 });
 
+const keyLegend = SCENARIOS.map((name, index) => `${SCENARIO_KEYS[index]}=${name}`).join(' ');
+
 server.listen(port, '127.0.0.1', () => {
   console.log(`Capturing GSI payloads on http://127.0.0.1:${port} into ${outRoot}`);
-  console.log('Scenario keys: 1=menus 2=map-load 3=mid-match 4=map-change 5=game-exit, q=quit');
+  console.log(`Scenario keys: ${keyLegend}, q=quit`);
+  seedCoverageFromDisk();
+  for (const line of coverage.summaries()) {
+    console.log(`Resumed coverage: ${line}`);
+  }
   console.log(`Active scenario: ${scenario}`);
 });
 
@@ -123,13 +181,14 @@ if (process.stdin.isTTY) {
   process.stdin.resume();
   process.stdin.on('data', (key) => {
     const pressed = key.toString();
-    if (pressed === 'q' || pressed === '\u0003') {
+    // 0x03 = Ctrl+C, which raw mode delivers as data instead of SIGINT.
+    if (pressed === 'q' || key[0] === 3) {
       console.log('Capture stopped.');
       server.close();
       process.exit(0);
     }
-    const index = Number.parseInt(pressed, 10) - 1;
-    if (index >= 0 && index < SCENARIOS.length) {
+    const index = SCENARIO_KEYS.indexOf(pressed);
+    if (index !== -1 && index < SCENARIOS.length) {
       scenario = SCENARIOS[index];
       console.log(`Active scenario: ${scenario}`);
     }

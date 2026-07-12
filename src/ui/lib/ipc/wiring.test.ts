@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { GameState } from '../../../shared/game-state';
+import type { ScoreboardState } from '../../../shared/scoreboard-state';
 import type { Settings } from '../../../shared/settings';
 import type { UpdateState } from '../../../shared/update-state';
 import { useAppStore } from '../../stores/app-store';
 import { useGameStateStore } from '../../stores/game-state-store';
+import { useScoreboardStore } from '../../stores/scoreboard-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useUpdateStore } from '../../stores/update-store';
 import type { AppSnapshot } from './bootstrap';
@@ -18,14 +20,20 @@ const snapshotSettings: Settings = {
   autostart: false,
   closeToTray: true,
   autoUpdate: true,
+  scoreboardEnabled: true,
+  scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
+  gsiTiming: 'default',
 };
 
 const snapshotGameState: GameState = { status: 'waiting', map: { kind: 'none' } };
 
 const snapshotUpdateState: UpdateState = { status: 'idle', version: null, errorKind: null };
 
+const snapshotScoreboard: ScoreboardState = { active: false };
+
 const snapshot: AppSnapshot = {
   gameState: snapshotGameState,
+  scoreboard: snapshotScoreboard,
   settings: snapshotSettings,
   updateState: snapshotUpdateState,
 };
@@ -43,11 +51,37 @@ const eventGameState: GameState = {
 
 const eventUpdateState: UpdateState = { status: 'ready', version: '1.2.3', errorKind: null };
 
+const eventScoreboard: ScoreboardState = {
+  active: true,
+  phase: 'live',
+  roundNumber: 4,
+  halftimeAfter: 12,
+  myTeam: { side: 'CT', score: 2, lossStreak: 1, timeoutsRemaining: 1 },
+  enemyTeam: { side: 'T', score: 1, lossStreak: 2, timeoutsRemaining: 1 },
+  roundHistory: ['won', 'lost', 'won'],
+  me: {
+    kills: 5,
+    assists: 1,
+    deaths: 2,
+    mvps: 1,
+    score: 12,
+    health: 100,
+    armor: 100,
+    helmet: true,
+    money: 4300,
+    equipValue: 5100,
+    roundKills: 0,
+    roundHsKills: 0,
+  },
+  derived: { approximate: false, hsRatePercent: 40, hsKills: 2 },
+};
+
 function createFakeBridge(): {
   bridge: TacticsBridge;
   emitSettings: (settings: Settings) => void;
   emitGameState: (gameState: GameState) => void;
   emitUpdateState: (updateState: UpdateState) => void;
+  emitScoreboard: (scoreboard: ScoreboardState) => void;
   subscribedDomains: string[];
 } {
   const handlers = new Map<string, (payload: unknown) => void>();
@@ -74,6 +108,9 @@ function createFakeBridge(): {
     emitUpdateState: (updateState): void => {
       handlers.get('update')?.(updateState);
     },
+    emitScoreboard: (scoreboard): void => {
+      handlers.get('scoreboard')?.(scoreboard);
+    },
   };
 }
 
@@ -81,6 +118,7 @@ describe('ipcWiring', () => {
   beforeEach(() => {
     useAppStore.setState({ ipcStatus: 'connecting', lastError: undefined });
     useGameStateStore.setState({ gameState: undefined });
+    useScoreboardStore.setState({ scoreboard: undefined });
     useSettingsStore.setState({ settings: undefined });
     useUpdateStore.setState({ updateState: undefined });
   });
@@ -90,6 +128,7 @@ describe('ipcWiring', () => {
 
     expect(useAppStore.getState()).toEqual({ ipcStatus: 'ready', lastError: undefined });
     expect(useGameStateStore.getState().gameState).toEqual(snapshotGameState);
+    expect(useScoreboardStore.getState().scoreboard).toEqual(snapshotScoreboard);
     expect(useSettingsStore.getState().settings).toEqual(snapshotSettings);
     expect(useUpdateStore.getState().updateState).toEqual(snapshotUpdateState);
   });
@@ -138,6 +177,17 @@ describe('ipcWiring', () => {
 
     emitUpdateState(eventUpdateState);
     expect(useUpdateStore.getState().updateState).toEqual(eventUpdateState);
+    expect(useAppStore.getState().ipcStatus).toBe('connecting');
+  });
+
+  it('subscribes the scoreboard event and mirrors the full slice into the store', () => {
+    const { bridge, emitScoreboard, subscribedDomains } = createFakeBridge();
+
+    ipcWiring.subscribeAll(bridge);
+    expect(subscribedDomains).toContain('scoreboard');
+
+    emitScoreboard(eventScoreboard);
+    expect(useScoreboardStore.getState().scoreboard).toEqual(eventScoreboard);
     expect(useAppStore.getState().ipcStatus).toBe('connecting');
   });
 

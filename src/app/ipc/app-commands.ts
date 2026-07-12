@@ -1,4 +1,11 @@
-import type { GameState, LogContext, Logger, Settings, UpdateState } from '../../shared';
+import type {
+  GameState,
+  LogContext,
+  Logger,
+  ScoreboardState,
+  Settings,
+  UpdateState,
+} from '../../shared';
 import {
   appGetSnapshot,
   appOpenExternal,
@@ -15,6 +22,7 @@ import { describeError, registerCommand } from './register-command';
  */
 export interface SnapshotDeps {
   readonly getGameState: () => GameState;
+  readonly getScoreboardState: () => ScoreboardState;
   readonly getSettings: () => Settings;
   readonly getUpdateState: () => UpdateState;
 }
@@ -41,6 +49,7 @@ export function registerAppCommands<TEvent>(
   registerCommand(deps, appGetSnapshot, () =>
     success({
       gameState: snapshot.getGameState(),
+      scoreboard: snapshot.getScoreboardState(),
       settings: snapshot.getSettings(),
       updateState: snapshot.getUpdateState(),
     }),

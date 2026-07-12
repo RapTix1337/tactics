@@ -1,0 +1,101 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783805945
+  },
+  "map": {
+    "mode": "scrimcomp2v2",
+    "name": "de_nuke",
+    "phase": "live",
+    "round": 9,
+    "team_ct": {
+      "score": 7,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 2,
+      "consecutive_round_losses": 1,
+      "timeouts_remaining": 1,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0,
+    "round_wins": {
+      "1": "t_win_elimination",
+      "2": "t_win_elimination",
+      "3": "t_win_elimination",
+      "4": "t_win_elimination",
+      "5": "t_win_elimination",
+      "6": "t_win_elimination",
+      "7": "ct_win_elimination",
+      "8": "ct_win_elimination",
+      "9": "ct_win_elimination"
+    }
+  },
+  "round": {
+    "phase": "over",
+    "win_team": "CT"
+  },
+  "player": {
+    "steamid": "76561190000000000",
+    "name": "Player",
+    "observer_slot": 0,
+    "team": "CT",
+    "activity": "playing",
+    "state": {
+      "health": 100,
+      "armor": 100,
+      "helmet": false,
+      "flashed": 0,
+      "smoked": 0,
+      "burning": 0,
+      "money": 2900,
+      "round_kills": 0,
+      "round_killhs": 0,
+      "equip_value": 850
+    },
+    "match_stats": {
+      "kills": 3,
+      "assists": 0,
+      "deaths": 3,
+      "mvps": 3,
+      "score": 4
+    }
+  },
+  "previously": {
+    "map": {
+      "round": 8,
+      "team_ct": {
+        "score": 6
+      },
+      "team_t": {
+        "consecutive_round_losses": 0
+      }
+    },
+    "round": {
+      "phase": "live"
+    },
+    "player": {
+      "state": {
+        "money": 150
+      }
+    }
+  },
+  "added": {
+    "map": {
+      "round_wins": {
+        "9": true
+      }
+    },
+    "round": {
+      "win_team": true
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

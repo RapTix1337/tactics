@@ -7,11 +7,15 @@ import type { GameStateMap, GsiConnectionStatus } from '../../../shared/game-sta
 import { Button } from '../../components/ui/button';
 import { STATUS_PRESENTATIONS } from '../../features/gsi-status/GsiStatusBadge';
 import { MapView } from '../../features/map-view/MapView';
+import { ScoreboardFrame } from '../../features/scoreboard/ScoreboardFrame';
+import { ScoreboardToggle } from '../../features/scoreboard/ScoreboardToggle';
 import { openExternal } from '../../lib/ipc/external-links';
 import { loadMapList } from '../../lib/ipc/map-catalog';
 import { useAppStore } from '../../stores/app-store';
 import { useGameStateStore } from '../../stores/game-state-store';
 import { useMapCatalogStore } from '../../stores/map-catalog-store';
+import { useScoreboardStore } from '../../stores/scoreboard-store';
+import { useSettingsStore } from '../../stores/settings-store';
 
 /**
  * `/live` (E15.3, 06-ui.md §2): the game-state-driven view, rendered 1:1
@@ -20,17 +24,24 @@ import { useMapCatalogStore } from '../../stores/map-catalog-store';
  * components (default profile); a resolved map without a profile links into
  * the upload flow (MVP-09); an unknown raw name shows the informative
  * contribute state (MVP-09); no game shows the GSI diagnostics (GSI-05).
+ * During a supported live match (SCB.9) the header carries the scoreboard
+ * toggle, and the resolved map view is wrapped in `ScoreboardFrame` when
+ * the scoreboard is enabled.
  * The frame keeps the `ipc-status` E2E selector (E5.4) in every state —
  * renaming or dropping it breaks the suite.
  */
 export function LivePage(): JSX.Element {
   const ipcStatus = useAppStore((state) => state.ipcStatus);
   const gameState = useGameStateStore((state) => state.gameState);
+  // The toggle shows whenever a supported live match runs (design §5) —
+  // including with the scoreboard off, so it can be turned back on here.
+  const scoreboardActive = useScoreboardStore((state) => state.scoreboard?.active === true);
 
   return (
     <div className="flex h-full flex-col gap-2">
-      <header className="px-4 pt-4">
+      <header className="flex items-center justify-between px-4 pt-4">
         <h1 className="text-2xl font-semibold">Live</h1>
+        {scoreboardActive && <ScoreboardToggle />}
       </header>
       <div className="min-h-0 flex-1">
         {gameState === undefined ? (
@@ -83,6 +94,8 @@ interface ListFailure {
 function ResolvedMapContent({ mapId }: { readonly mapId: string }): JSX.Element {
   const map = useMapCatalogStore((state) => state.list?.find((entry) => entry.id === mapId));
   const listLoaded = useMapCatalogStore((state) => state.list !== undefined);
+  const scoreboard = useScoreboardStore((state) => state.scoreboard);
+  const settings = useSettingsStore((state) => state.settings);
   // Bumped by "Try again": re-runs the fetch and hides the stale failure.
   const [listRequest, setListRequest] = useState(0);
   const [listFailure, setListFailure] = useState<ListFailure | undefined>(undefined);
@@ -153,6 +166,16 @@ function ResolvedMapContent({ mapId }: { readonly mapId: string }): JSX.Element 
           </Link>
         </Button>
       </div>
+    );
+  }
+  // SCB.9 (spec AC 6/7): the frame renders only when the slice is active
+  // AND the toggle is on — every other combination (including missing
+  // snapshots) is exactly today's plain map view.
+  if (scoreboard?.active === true && settings?.scoreboardEnabled === true) {
+    return (
+      <ScoreboardFrame state={scoreboard} layout={settings.scoreboardLayout}>
+        <MapView mapId={mapId} />
+      </ScoreboardFrame>
     );
   }
   return <MapView mapId={mapId} />;

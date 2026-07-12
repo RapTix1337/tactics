@@ -6,6 +6,7 @@ import type { TacticsBridge } from '../../../shared/bridge';
 import type { CommandResult } from '../../../shared/envelope';
 import type { Settings } from '../../../shared/settings';
 import type { GsiSetupPlan } from '../../lib/ipc/gsi-setup';
+import { useGameStateStore } from '../../stores/game-state-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useUpdateStore } from '../../stores/update-store';
 import { SettingsPage } from './SettingsPage';
@@ -17,6 +18,9 @@ const storedSettings: Settings = {
   autostart: false,
   closeToTray: true,
   autoUpdate: true,
+  scoreboardEnabled: true,
+  scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
+  gsiTiming: 'default',
 };
 
 const readyPlan: GsiSetupPlan = {
@@ -53,6 +57,7 @@ afterEach(() => {
   Reflect.deleteProperty(window, 'tactics');
   useSettingsStore.setState({ settings: undefined });
   useUpdateStore.setState({ updateState: undefined });
+  useGameStateStore.setState({ gameState: undefined });
 });
 
 describe('SettingsPage', () => {
@@ -64,9 +69,18 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('switch', { name: 'Start with Windows' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Close to tray' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Automatic updates' })).toBeInTheDocument();
+    // SCB.10: the scoreboard section with the builder.
+    expect(
+      screen.getByRole('switch', { name: 'Show scoreboard on the live map' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Scoreboard builder' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add group' })).toBeInTheDocument();
     // E16.2: CS2 path and the advanced GSI port.
     expect(await screen.findByText(readyPlan.gameRoot)).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Set port manually' })).toBeInTheDocument();
+    // SCB.11: the GSI timing section with the persisted profile selected.
+    expect(screen.getByRole('radiogroup', { name: 'GSI timing profile' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Default/ })).toBeChecked();
     // E18.2: the updates section.
     expect(screen.getByRole('button', { name: 'Check for updates' })).toBeInTheDocument();
   });
@@ -85,5 +99,15 @@ describe('SettingsPage', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
+  });
+
+  it('opens the same repair dialog from the GSI timing section (SCB.11)', async () => {
+    useGameStateStore.setState({ gameState: { status: 'repair-needed', map: { kind: 'none' } } });
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    await user.click(screen.getByRole('button', { name: 'Repair now' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Repair GSI configuration' })).toBeVisible();
   });
 });

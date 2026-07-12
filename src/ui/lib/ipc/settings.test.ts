@@ -11,6 +11,9 @@ const fullSettings: Settings = {
   autostart: true,
   closeToTray: true,
   autoUpdate: false,
+  scoreboardEnabled: true,
+  scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
+  gsiTiming: 'default',
 };
 
 function installBridge(invoke: ReturnType<typeof vi.fn>): void {

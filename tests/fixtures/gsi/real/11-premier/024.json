@@ -1,0 +1,113 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783809670
+  },
+  "map": {
+    "mode": "competitive",
+    "name": "de_cache",
+    "phase": "live",
+    "round": 18,
+    "team_ct": {
+      "score": 12,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 3,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 6,
+      "consecutive_round_losses": 4,
+      "timeouts_remaining": 3,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0,
+    "round_wins": {
+      "1": "ct_win_defuse",
+      "2": "ct_win_elimination",
+      "3": "ct_win_elimination",
+      "4": "t_win_bomb",
+      "5": "t_win_bomb",
+      "6": "t_win_elimination",
+      "7": "ct_win_elimination",
+      "8": "t_win_elimination",
+      "9": "t_win_elimination",
+      "10": "ct_win_defuse",
+      "11": "t_win_elimination",
+      "12": "t_win_elimination",
+      "13": "ct_win_elimination",
+      "14": "ct_win_elimination",
+      "15": "ct_win_elimination",
+      "16": "ct_win_elimination",
+      "17": "t_win_elimination",
+      "18": "ct_win_defuse"
+    }
+  },
+  "round": {
+    "phase": "live"
+  },
+  "player": {
+    "steamid": "76561190000000001",
+    "name": "Player",
+    "xpoverload": 2,
+    "observer_slot": 0,
+    "team": "CT",
+    "activity": "playing",
+    "state": {
+      "health": 78,
+      "armor": 97,
+      "helmet": true,
+      "defusekit": true,
+      "flashed": 0,
+      "smoked": 0,
+      "burning": 0,
+      "money": 0,
+      "round_kills": 0,
+      "round_killhs": 0,
+      "equip_value": 6550
+    },
+    "match_stats": {
+      "kills": 22,
+      "assists": 6,
+      "deaths": 14,
+      "mvps": 3,
+      "score": 51
+    }
+  },
+  "previously": {
+    "player": {
+      "steamid": "76561190000000000",
+      "name": "Player",
+      "observer_slot": 1,
+      "state": {
+        "health": 0,
+        "armor": 0,
+        "helmet": false,
+        "money": 1150,
+        "round_kills": 3,
+        "round_killhs": 2,
+        "equip_value": 4300
+      },
+      "match_stats": {
+        "kills": 24,
+        "assists": 3,
+        "deaths": 12,
+        "mvps": 4,
+        "score": 58
+      }
+    }
+  },
+  "added": {
+    "player": {
+      "state": {
+        "defusekit": true
+      },
+      "xpoverload": true
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

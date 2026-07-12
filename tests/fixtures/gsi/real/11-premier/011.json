@@ -1,0 +1,92 @@
+{
+  "provider": {
+    "name": "Counter-Strike: Global Offensive",
+    "appid": 730,
+    "version": 14169,
+    "steamid": "76561190000000000",
+    "timestamp": 1783808117
+  },
+  "map": {
+    "mode": "competitive",
+    "name": "de_cache",
+    "phase": "live",
+    "round": 2,
+    "team_ct": {
+      "score": 2,
+      "consecutive_round_losses": 0,
+      "timeouts_remaining": 3,
+      "matches_won_this_series": 0
+    },
+    "team_t": {
+      "score": 0,
+      "consecutive_round_losses": 3,
+      "timeouts_remaining": 3,
+      "matches_won_this_series": 0
+    },
+    "num_matches_to_win_series": 0,
+    "round_wins": {
+      "1": "ct_win_defuse",
+      "2": "ct_win_elimination"
+    }
+  },
+  "round": {
+    "phase": "live"
+  },
+  "player": {
+    "steamid": "76561190000000001",
+    "name": "Player",
+    "xpoverload": 2,
+    "observer_slot": 5,
+    "team": "T",
+    "activity": "playing",
+    "state": {
+      "health": 99,
+      "armor": 100,
+      "helmet": true,
+      "flashed": 0,
+      "smoked": 0,
+      "burning": 0,
+      "money": 400,
+      "round_kills": 1,
+      "round_killhs": 1,
+      "equip_value": 4700
+    },
+    "match_stats": {
+      "kills": 2,
+      "assists": 1,
+      "deaths": 2,
+      "mvps": 0,
+      "score": 5
+    }
+  },
+  "previously": {
+    "player": {
+      "steamid": "76561190000000000",
+      "name": "Player",
+      "observer_slot": 6,
+      "state": {
+        "health": 0,
+        "armor": 0,
+        "helmet": false,
+        "money": 550,
+        "round_kills": 0,
+        "round_killhs": 0,
+        "equip_value": 3900
+      },
+      "match_stats": {
+        "kills": 3,
+        "assists": 0,
+        "deaths": 3,
+        "score": 6
+      }
+    }
+  },
+  "added": {
+    "player": {
+      "xpoverload": true
+    }
+  },
+  "auth": {
+    "token": "REDACTED"
+  }
+}

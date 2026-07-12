@@ -17,6 +17,9 @@ const storedSettings: Settings = {
   autostart: false,
   closeToTray: true,
   autoUpdate: true,
+  scoreboardEnabled: true,
+  scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
+  gsiTiming: 'default',
 };
 
 const detectedPlan: GsiSetupPlan = {
