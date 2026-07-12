@@ -232,7 +232,7 @@ describe('createScoreboardEngine', () => {
       halftimeAfter: 12,
       myTeam: { side: 'T', score: 6, lossStreak: 0, timeoutsRemaining: 1 },
       enemyTeam: { side: 'CT', score: 4, lossStreak: 2, timeoutsRemaining: 1 },
-      roundHistory: [],
+      roundHistory: ['won', 'won', 'lost', 'lost', 'won', 'won', 'lost', 'lost', 'won', 'won'],
       me: {
         kills: 6,
         assists: 2,
@@ -346,6 +346,23 @@ describe('createScoreboardEngine', () => {
   });
 
   it('follows the halftime side swap (AC 3)', () => {
+    // The full first half from the user's T perspective — the history must
+    // keep this exact orientation after the side swap.
+    const firstHalfHistory = [
+      'won',
+      'won',
+      'lost',
+      'lost',
+      'won',
+      'won',
+      'lost',
+      'lost',
+      'won',
+      'won',
+      'lost',
+      'lost',
+    ];
+
     const { engine } = createEngine();
     engine.handleInput(fixture('08-halftime-swap/003')); // intermission, still T
     const beforeSwap = engine.getState();
@@ -365,6 +382,7 @@ describe('createScoreboardEngine', () => {
         lossStreak: 0,
         timeoutsRemaining: 1,
       });
+      expect(beforeSwap.roundHistory).toEqual(firstHalfHistory);
     }
 
     engine.handleInput(fixture('08-halftime-swap/005')); // second half, now CT
@@ -385,6 +403,7 @@ describe('createScoreboardEngine', () => {
         lossStreak: 1,
         timeoutsRemaining: 1,
       });
+      expect(afterSwap.roundHistory).toEqual(firstHalfHistory);
     }
   });
 
@@ -396,6 +415,7 @@ describe('createScoreboardEngine', () => {
     if (firstHalf.active) {
       expect(firstHalf.halftimeAfter).toBe(8);
       expect(firstHalf.myTeam.side).toBe('T');
+      expect(firstHalf.roundHistory).toEqual([]); // warmup — no round_wins yet
     }
 
     engine.handleInput(fixture('10-wingman/011')); // second half, now CT
@@ -415,6 +435,134 @@ describe('createScoreboardEngine', () => {
         lossStreak: 0,
         timeoutsRemaining: 1,
       });
+      // MR8 orientation: rounds 1–8 from the T (first-half) perspective.
+      expect(secondHalf.roundHistory).toEqual([
+        'won',
+        'won',
+        'won',
+        'won',
+        'won',
+        'won',
+        'lost',
+        'lost',
+      ]);
+    }
+  });
+
+  it('accumulates HS% and history across the full Premier match replay (AC 10 exact case)', () => {
+    const { engine } = createEngine();
+    // 001–025: menu, warmup, both halves, gameover — stop before the
+    // trailing menu payload (026) to inspect the final match state.
+    for (const input of scenario('11-premier').slice(0, 25)) engine.handleInput(input);
+
+    const state = engine.getState();
+    expect(state.active).toBe(true);
+    if (state.active) {
+      expect(state.phase).toBe('round-over'); // gameover
+      expect(state.roundNumber).toBe(19);
+      expect(state.myTeam).toMatchObject({ side: 'CT', score: 13 });
+      expect(state.enemyTeam).toMatchObject({ side: 'T', score: 6 });
+      // First half as T (rounds 1–12), second half as CT (13–19).
+      expect(state.roundHistory).toEqual([
+        'lost',
+        'lost',
+        'lost',
+        'won',
+        'won',
+        'won',
+        'lost',
+        'won',
+        'won',
+        'lost',
+        'won',
+        'won',
+        'won',
+        'won',
+        'won',
+        'won',
+        'lost',
+        'won',
+        'won',
+      ]);
+      // Accumulation from warmup on ⇒ exact; own-observed rounds fold
+      // 10 kills / 4 headshots across the curated gaps.
+      expect(state.derived).toEqual({ approximate: false, hsRatePercent: 40 });
+    }
+  });
+
+  it('flags approximate HS% for a mid-match start (AC 10)', () => {
+    const { engine } = createEngine();
+    const replay = [
+      ...scenario('06-comp-rounds').slice(0, 3), // skip the trailing menus
+      ...scenario('07-dead-spectate'),
+      ...scenario('08-halftime-swap'),
+      ...scenario('09-match-end').slice(0, 12), // skip the trailing menu
+    ];
+    for (const input of replay) engine.handleInput(input);
+
+    const state = engine.getState();
+    expect(state.active).toBe(true);
+    if (state.active) {
+      expect(state.roundNumber).toBe(24);
+      // First sight at round 11 with 6 unattributable kills ⇒ approximate;
+      // the only own-observed round kill (round 12) was no headshot.
+      expect(state.derived).toEqual({ approximate: true, hsRatePercent: 0 });
+      expect(state.roundHistory).toHaveLength(24);
+    }
+  });
+
+  it('resets the accumulation on a map change', () => {
+    const { engine } = createEngine();
+    for (const input of scenario('11-premier').slice(0, 12)) engine.handleInput(input);
+    const beforeChange = engine.getState();
+    expect(beforeChange.active).toBe(true);
+    if (beforeChange.active) {
+      expect(beforeChange.derived).toEqual({ approximate: false, hsRatePercent: (2 / 3) * 100 });
+    }
+
+    // New map, own player straight from its round 1 — fresh accumulation.
+    engine.handleInput(
+      syntheticInput({
+        mapName: 'de_mirage',
+        map: { ...SYNTHETIC_MAP, round: 0 },
+        round: { phase: 'freezetime', bomb: null },
+        player: {
+          ...SYNTHETIC_PLAYER,
+          matchStats: { kills: 0, assists: 0, deaths: 0, mvps: 0, score: 0 },
+        },
+      }),
+    );
+    const afterChange = engine.getState();
+    expect(afterChange.active).toBe(true);
+    if (afterChange.active) {
+      expect(afterChange.roundHistory).toEqual([]);
+      expect(afterChange.derived).toEqual({ approximate: false, hsRatePercent: null });
+    }
+  });
+
+  it('resets the accumulation on a round regression within the same map', () => {
+    const { engine } = createEngine();
+    engine.handleInput(syntheticInput({})); // round 4 mid-match ⇒ approximate
+    const midMatch = engine.getState();
+    expect(midMatch.active).toBe(true);
+    if (midMatch.active) expect(midMatch.derived.approximate).toBe(true);
+
+    // mp_restartgame: same map, the round counter drops back to round 1.
+    engine.handleInput(
+      syntheticInput({
+        map: { ...SYNTHETIC_MAP, round: 0 },
+        round: { phase: 'freezetime', bomb: null },
+        player: {
+          ...SYNTHETIC_PLAYER,
+          matchStats: { kills: 0, assists: 0, deaths: 0, mvps: 0, score: 0 },
+        },
+      }),
+    );
+    const restarted = engine.getState();
+    expect(restarted.active).toBe(true);
+    if (restarted.active) {
+      expect(restarted.roundNumber).toBe(1);
+      expect(restarted.derived).toEqual({ approximate: false, hsRatePercent: null });
     }
   });
 

@@ -1,32 +1,36 @@
 import type { Logger } from '../../../shared';
+import { createHsAccumulator } from './accumulator';
 import { isOwnPlayer } from './identity';
 import type {
   LiveMatchInput,
   LiveMatchMap,
+  LiveMatchPlayer,
   LiveMatchPlayerMatchStats,
   LiveMatchPlayerRoundState,
   LiveMatchRound,
   LiveMatchTeam,
 } from './input';
 import { resolveModeRules } from './modes';
+import {
+  deriveFirstHalfSide,
+  deriveRoundHistory,
+  type RoundOutcome,
+  type TeamSide,
+} from './round-history';
 
 /**
  * The scoreboard state machine (ADR-052, design §2.2): consumes
  * `LiveMatchInput` observations, holds the own-player snapshot across the
- * dead-spectate flip, gates by mode, and notifies listeners only on
- * structural change (02-architecture §4.2 — CS2 posts several times per
- * second, the slice changes rarely). `roundHistory` and `derived` are the
- * SCB.6 stubs: empty history, `approximate` by construction (no
- * accumulation exists yet), no HS rate.
+ * dead-spectate flip, gates by mode, folds the HS accumulation, maps the
+ * round history, and notifies listeners only on structural change
+ * (02-architecture §4.2 — CS2 posts several times per second, the slice
+ * changes rarely).
  */
 
 /** The five display phases of the slice (design §3.2). */
 export type ScoreboardPhase = 'warmup' | 'freezetime' | 'live' | 'bomb-planted' | 'round-over';
 
-export type TeamSide = 'CT' | 'T';
-
-/** A round from my team's perspective (filled by SCB.6). */
-export type RoundOutcome = 'won' | 'lost';
+export type { RoundOutcome, TeamSide } from './round-history';
 
 export interface ScoreboardTeamState {
   readonly side: TeamSide;
@@ -91,21 +95,30 @@ const INACTIVE: ScoreboardState = { active: false };
 export function createScoreboardEngine(deps: { logger: Logger }): ScoreboardEngine {
   // Own-player tracking survives foreign (dead-spectate) payloads and is
   // dropped whenever the match context ends: map change, menus, GSI
-  // inactivity. Full match-reset detection (round/total regression) is SCB.6.
+  // inactivity. A regression reset (mp_restartgame, rematch — detected by
+  // the accumulator) clears only the accumulation and the history
+  // orientation: the own side survives, every own payload refreshes it.
   let ownSide: TeamSide | null = null;
   let ownMatchStats: LiveMatchPlayerMatchStats | null = null;
   let ownRoundState: LiveMatchPlayerRoundState | null = null;
   let lastMapName: string | null = null;
   let lastUnsupportedMode: string | null = null;
 
+  const accumulator = createHsAccumulator();
+  // The first-half side remembered while the match is in regulation — the
+  // only orientation source for the history strip once overtime starts.
+  let firstHalfSideMemory: TeamSide | null = null;
+
   let state: ScoreboardState = INACTIVE;
   let disposed = false;
   const listeners = new Set<(state: ScoreboardState) => void>();
 
-  function clearOwnTracking(): void {
+  function clearMatchTracking(): void {
     ownSide = null;
     ownMatchStats = null;
     ownRoundState = null;
+    firstHalfSideMemory = null;
+    accumulator.reset();
   }
 
   function commit(next: ScoreboardState): void {
@@ -114,14 +127,40 @@ export function createScoreboardEngine(deps: { logger: Logger }): ScoreboardEngi
     for (const listener of [...listeners]) listener(state);
   }
 
-  function trackOwnPlayer(input: LiveMatchInput): void {
+  function ownPlayerOf(input: LiveMatchInput): LiveMatchPlayer | null {
     if (input.player === null || !isOwnPlayer(input.providerSteamId, input.player.steamId)) {
-      return;
+      return null;
     }
-    const side = parseSide(input.player.team);
+    return input.player;
+  }
+
+  function trackOwnPlayer(input: LiveMatchInput): void {
+    const player = ownPlayerOf(input);
+    if (player === null) return;
+    const side = parseSide(player.team);
     if (side !== null) ownSide = side;
-    if (input.player.matchStats !== null) ownMatchStats = input.player.matchStats;
-    if (input.player.state !== null) ownRoundState = input.player.state;
+    if (player.matchStats !== null) ownMatchStats = player.matchStats;
+    if (player.state !== null) ownRoundState = player.state;
+  }
+
+  function observeAccumulation(input: LiveMatchInput): void {
+    // Accumulate only inside a supported match context — menus and map
+    // changes reset via `clearMatchTracking` before this is reached.
+    if (input.mapName === null || input.map === null) return;
+    if (resolveModeRules(input.map.mode) === null) return;
+    const player = ownPlayerOf(input);
+    const { wasReset } = accumulator.observe({
+      displayRound: deriveDisplayRound(input.map, input.round),
+      own:
+        player === null
+          ? null
+          : {
+              kills: player.matchStats?.kills ?? null,
+              roundKills: player.state?.roundKills ?? null,
+              roundHsKills: player.state?.roundHsKills ?? null,
+            },
+    });
+    if (wasReset) firstHalfSideMemory = null;
   }
 
   function deriveState(input: LiveMatchInput): ScoreboardState {
@@ -139,16 +178,27 @@ export function createScoreboardEngine(deps: { logger: Logger }): ScoreboardEngi
     // player was observed once, there is no trustworthy side (freeze bias).
     if (ownSide === null) return INACTIVE;
 
+    const displayRound = deriveDisplayRound(input.map, input.round);
+    // Within regulation the orientation is derivable from the current side;
+    // remember it so an overtime history can still render (design §2.2 —
+    // OT itself is out of scope, only regulation rounds are mapped).
+    const regulationFirstHalfSide = deriveFirstHalfSide(ownSide, displayRound, rules.halftimeAfter);
+    if (regulationFirstHalfSide !== null) firstHalfSideMemory = regulationFirstHalfSide;
+
     const teamCt = toTeamState('CT', input.map.teamCt);
     const teamT = toTeamState('T', input.map.teamT);
     return {
       active: true,
       phase: derivePhase(input.map, input.round),
-      roundNumber: deriveDisplayRound(input.map, input.round),
+      roundNumber: displayRound,
       halftimeAfter: rules.halftimeAfter,
       myTeam: ownSide === 'CT' ? teamCt : teamT,
       enemyTeam: ownSide === 'CT' ? teamT : teamCt,
-      roundHistory: [],
+      roundHistory: deriveRoundHistory({
+        roundWins: input.map.roundWins,
+        firstHalfSide: regulationFirstHalfSide ?? firstHalfSideMemory,
+        halftimeAfter: rules.halftimeAfter,
+      }),
       me: {
         kills: ownMatchStats?.kills ?? null,
         assists: ownMatchStats?.assists ?? null,
@@ -163,7 +213,7 @@ export function createScoreboardEngine(deps: { logger: Logger }): ScoreboardEngi
         roundKills: ownRoundState?.roundKills ?? null,
         roundHsKills: ownRoundState?.roundHsKills ?? null,
       },
-      derived: { approximate: true, hsRatePercent: null },
+      derived: accumulator.getDerived(),
     };
   }
 
@@ -171,16 +221,17 @@ export function createScoreboardEngine(deps: { logger: Logger }): ScoreboardEngi
     handleInput(input: LiveMatchInput): void {
       if (disposed) return;
       if (input.mapName !== lastMapName) {
-        clearOwnTracking();
+        clearMatchTracking();
         lastMapName = input.mapName;
       }
       trackOwnPlayer(input);
+      observeAccumulation(input);
       commit(deriveState(input));
     },
 
     notifyGsiInactive(): void {
       if (disposed) return;
-      clearOwnTracking();
+      clearMatchTracking();
       lastMapName = null;
       commit(INACTIVE);
     },
