@@ -12,7 +12,7 @@ import {
   verifyConfig,
   writeConfig,
 } from '../../modules/gsi';
-import type { Logger } from '../../shared';
+import type { GsiTiming, Logger } from '../../shared';
 import { gsiApplySetup, gsiGetSetupPlan } from '../../shared';
 import type { GsiCommandDeps, GsiSetupTarget } from './gsi-commands';
 import { registerGsiCommands, runStartupConfigVerify } from './gsi-commands';
@@ -20,6 +20,7 @@ import type { CommandRegistrationDeps } from './register-command';
 
 const PORT = 42730;
 const TOKEN = '0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0';
+const TIMING: GsiTiming = 'default';
 
 interface FakeEvent {
   trusted: boolean;
@@ -67,6 +68,7 @@ describe('gsi commands (E10.6)', () => {
       deps: {
         resolveSetupTarget: () => Promise.resolve(target),
         getSetupPort: () => PORT,
+        getSetupTiming: () => TIMING,
         getAuthToken: () => TOKEN,
         getConfigPath: (directory) => join(directory, GSI_CONFIG_FILE_NAME),
         verifyConfig,
@@ -151,7 +153,19 @@ describe('gsi commands (E10.6)', () => {
       await expect(invoke(gsiApplySetup.channel)).resolves.toEqual({ ok: true, data: undefined });
 
       expect(readFileSync(join(cfgDir, GSI_CONFIG_FILE_NAME), 'utf8')).toBe(
-        generateConfigContent(PORT, TOKEN),
+        generateConfigContent(PORT, TOKEN, TIMING),
+      );
+      expect(machine.getState().status).toBe('waiting');
+    });
+
+    it('writes the profile the current timing setting selects (ADR-051 repair)', async () => {
+      const { deps } = createDeps({ getSetupTiming: () => 'fast' });
+      const { invoke } = register(deps);
+
+      await expect(invoke(gsiApplySetup.channel)).resolves.toEqual({ ok: true, data: undefined });
+
+      expect(readFileSync(join(cfgDir, GSI_CONFIG_FILE_NAME), 'utf8')).toBe(
+        generateConfigContent(PORT, TOKEN, 'fast'),
       );
       expect(machine.getState().status).toBe('waiting');
     });
@@ -160,12 +174,12 @@ describe('gsi commands (E10.6)', () => {
       machine.reportConfigInvalid(); // repair-needed after a startup verify hit
       const { deps } = createDeps();
       const { invoke } = register(deps);
-      await deps.writeConfig(cfgDir, PORT, 'a'.repeat(64));
+      await deps.writeConfig(cfgDir, PORT, 'a'.repeat(64), TIMING);
 
       await expect(invoke(gsiApplySetup.channel)).resolves.toEqual({ ok: true, data: undefined });
 
       expect(readFileSync(join(cfgDir, GSI_CONFIG_FILE_NAME), 'utf8')).toBe(
-        generateConfigContent(PORT, TOKEN),
+        generateConfigContent(PORT, TOKEN, TIMING),
       );
       expect(machine.getState().status).toBe('waiting');
     });
@@ -273,7 +287,7 @@ describe('gsi commands (E10.6)', () => {
   describe('runStartupConfigVerify', () => {
     it('moves a healthy install to waiting (E10.3 healthy-boot case)', async () => {
       const { deps } = createDeps();
-      await deps.writeConfig(cfgDir, PORT, TOKEN);
+      await deps.writeConfig(cfgDir, PORT, TOKEN, TIMING);
       const { logger } = createCapturingLogger();
 
       await runStartupConfigVerify(deps, logger);
@@ -292,10 +306,21 @@ describe('gsi commands (E10.6)', () => {
 
     it('yields repair-needed for a stale config (old port)', async () => {
       const { deps } = createDeps();
-      await deps.writeConfig(cfgDir, PORT + 1, TOKEN);
+      await deps.writeConfig(cfgDir, PORT + 1, TOKEN, TIMING);
       const { logger } = createCapturingLogger();
 
       await runStartupConfigVerify(deps, logger);
+
+      expect(machine.getState().status).toBe('repair-needed');
+    });
+
+    it('yields repair-needed when only the timing profile changed (ADR-051)', async () => {
+      const { deps } = createDeps({ getSetupTiming: () => 'default' });
+      await deps.writeConfig(cfgDir, PORT, TOKEN, 'default');
+      const { logger } = createCapturingLogger();
+
+      // The user switched the profile after the config was written on disk.
+      await runStartupConfigVerify({ ...deps, getSetupTiming: () => 'fast' }, logger);
 
       expect(machine.getState().status).toBe('repair-needed');
     });
@@ -332,16 +357,18 @@ describe('gsi commands (E10.6)', () => {
       expect(machine.getState().status).toBe('repair-needed');
     });
 
-    it('verifies against the current port and token', async () => {
+    it('verifies against the current port, token, and timing profile', async () => {
       const getSetupPort = vi.fn(() => PORT);
       const getAuthToken = vi.fn(() => TOKEN);
-      const { deps } = createDeps({ getSetupPort, getAuthToken });
+      const getSetupTiming = vi.fn(() => TIMING);
+      const { deps } = createDeps({ getSetupPort, getAuthToken, getSetupTiming });
       const { logger } = createCapturingLogger();
 
       await runStartupConfigVerify(deps, logger);
 
       expect(getSetupPort).toHaveBeenCalledOnce();
       expect(getAuthToken).toHaveBeenCalledOnce();
+      expect(getSetupTiming).toHaveBeenCalledOnce();
     });
   });
 });

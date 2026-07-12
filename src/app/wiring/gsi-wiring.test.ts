@@ -131,6 +131,22 @@ describe('createGsiWiring', () => {
     });
   });
 
+  describe('getSetupTiming', () => {
+    it('reflects the current gsiTiming setting (ADR-051)', () => {
+      const { commandDeps } = createWiring({
+        getSettings: () => ({ ...SETTINGS_DEFAULTS, gsiTiming: 'fast' }),
+      });
+
+      expect(commandDeps.getSetupTiming()).toBe('fast');
+    });
+
+    it('defaults to the "default" profile', () => {
+      const { commandDeps } = createWiring();
+
+      expect(commandDeps.getSetupTiming()).toBe('default');
+    });
+  });
+
   it('hands out the operational-state token and the config path', () => {
     const { commandDeps } = createWiring();
 
