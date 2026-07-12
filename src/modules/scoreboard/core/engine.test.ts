@@ -247,7 +247,7 @@ describe('createScoreboardEngine', () => {
         roundKills: 0,
         roundHsKills: 0,
       },
-      derived: { approximate: true, hsRatePercent: null },
+      derived: { approximate: true, hsRatePercent: null, hsKills: 0 },
     });
   });
 
@@ -486,7 +486,7 @@ describe('createScoreboardEngine', () => {
       ]);
       // Accumulation from warmup on ⇒ exact; own-observed rounds fold
       // 10 kills / 4 headshots across the curated gaps.
-      expect(state.derived).toEqual({ approximate: false, hsRatePercent: 40 });
+      expect(state.derived).toEqual({ approximate: false, hsRatePercent: 40, hsKills: 4 });
     }
   });
 
@@ -506,7 +506,7 @@ describe('createScoreboardEngine', () => {
       expect(state.roundNumber).toBe(24);
       // First sight at round 11 with 6 unattributable kills ⇒ approximate;
       // the only own-observed round kill (round 12) was no headshot.
-      expect(state.derived).toEqual({ approximate: true, hsRatePercent: 0 });
+      expect(state.derived).toEqual({ approximate: true, hsRatePercent: 0, hsKills: 0 });
       expect(state.roundHistory).toHaveLength(24);
     }
   });
@@ -517,7 +517,11 @@ describe('createScoreboardEngine', () => {
     const beforeChange = engine.getState();
     expect(beforeChange.active).toBe(true);
     if (beforeChange.active) {
-      expect(beforeChange.derived).toEqual({ approximate: false, hsRatePercent: (2 / 3) * 100 });
+      expect(beforeChange.derived).toEqual({
+        approximate: false,
+        hsRatePercent: (2 / 3) * 100,
+        hsKills: 2,
+      });
     }
 
     // New map, own player straight from its round 1 — fresh accumulation.
@@ -536,7 +540,7 @@ describe('createScoreboardEngine', () => {
     expect(afterChange.active).toBe(true);
     if (afterChange.active) {
       expect(afterChange.roundHistory).toEqual([]);
-      expect(afterChange.derived).toEqual({ approximate: false, hsRatePercent: null });
+      expect(afterChange.derived).toEqual({ approximate: false, hsRatePercent: null, hsKills: 0 });
     }
   });
 
@@ -562,7 +566,67 @@ describe('createScoreboardEngine', () => {
     expect(restarted.active).toBe(true);
     if (restarted.active) {
       expect(restarted.roundNumber).toBe(1);
-      expect(restarted.derived).toEqual({ approximate: false, hsRatePercent: null });
+      expect(restarted.derived).toEqual({ approximate: false, hsRatePercent: null, hsKills: 0 });
+    }
+  });
+
+  // CS2's GSI updates `round.phase` and `map.round` non-atomically at round
+  // end: a snapshot can carry phase `over` while `map.round` still names the
+  // previous count, deriving a display round one step back. That transient
+  // regression must not count as a new match — it silently wiped the
+  // accumulated totals mid-match (2026-07-12 report: 100% instead of 91%).
+  it('keeps the accumulation across a torn round-end payload', () => {
+    const { engine } = createEngine();
+    const me = (kills: number, roundKills: number, roundHsKills: number) => ({
+      ...SYNTHETIC_PLAYER,
+      matchStats: { ...SYNTHETIC_PLAYER.matchStats, kills },
+      state: { ...SYNTHETIC_PLAYER.state, roundKills, roundHsKills },
+    });
+
+    // Round 4 live (map.round 3): one non-headshot kill.
+    engine.handleInput(syntheticInput({ player: me(1, 1, 0) }));
+    // Freezetime of round 5: round 4 folds (1 kill, 0 HS).
+    engine.handleInput(
+      syntheticInput({
+        map: { ...SYNTHETIC_MAP, round: 4 },
+        round: { phase: 'freezetime', bomb: null },
+        player: me(1, 0, 0),
+      }),
+    );
+    // Round 5 live: one headshot kill.
+    engine.handleInput(
+      syntheticInput({ map: { ...SYNTHETIC_MAP, round: 4 }, player: me(2, 1, 1) }),
+    );
+    // Torn round end: phase already `over`, map.round still 4 ⇒ display
+    // round regresses 5 → 4 for exactly one payload.
+    engine.handleInput(
+      syntheticInput({
+        map: { ...SYNTHETIC_MAP, round: 4 },
+        round: { phase: 'over', bomb: null },
+        player: me(2, 1, 1),
+      }),
+    );
+    // The consistent round-end snapshot and the next freezetime follow.
+    engine.handleInput(
+      syntheticInput({
+        map: { ...SYNTHETIC_MAP, round: 5 },
+        round: { phase: 'over', bomb: null },
+        player: me(2, 1, 1),
+      }),
+    );
+    engine.handleInput(
+      syntheticInput({
+        map: { ...SYNTHETIC_MAP, round: 5 },
+        round: { phase: 'freezetime', bomb: null },
+        player: me(2, 0, 0),
+      }),
+    );
+
+    const state = engine.getState();
+    expect(state.active).toBe(true);
+    if (state.active) {
+      // 2 kills, 1 HS — the pre-torn non-HS kill survives, nothing double-folds.
+      expect(state.derived).toEqual({ approximate: true, hsRatePercent: 50, hsKills: 1 });
     }
   });
 

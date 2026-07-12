@@ -126,6 +126,7 @@ describe('scoreboardLayoutSchema', () => {
       | 'kd'
       | 'kMinusD'
       | 'hsRate'
+      | 'hsKills'
       | 'health'
       | 'armor'
       | 'money'

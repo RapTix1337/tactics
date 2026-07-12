@@ -86,6 +86,7 @@ describe('ScoreboardBuilder', () => {
       'Add Score to the scoreboard',
       'Add K/D to the scoreboard',
       'Add K−D to the scoreboard',
+      'Add Headshots to the scoreboard',
       'Add Armor to the scoreboard',
       'Add Equip to the scoreboard',
       'Add Round kills to the scoreboard',
@@ -94,9 +95,19 @@ describe('ScoreboardBuilder', () => {
   });
 
   it('marks a fully used category with "All in use"', () => {
-    render(<Harness initial={sampleLayout} />);
+    render(
+      <Harness
+        initial={{
+          groups: [
+            ...sampleLayout.groups.slice(0, 1),
+            // Both Derived fields in use — the category empties out.
+            { label: 'Derived', fields: ['hsRate', 'hsKills'] },
+            ...sampleLayout.groups.slice(2),
+          ],
+        }}
+      />,
+    );
 
-    // hsRate — the only Derived field — is in the layout.
     expect(screen.getByText('All in use')).toBeInTheDocument();
   });
 
@@ -247,6 +258,30 @@ describe('ScoreboardBuilder', () => {
 
     const groupHandle = screen.getByRole('button', { name: 'Reorder group Match totals' });
     expect(groupHandle).toHaveAttribute('aria-roledescription', 'sortable');
+  });
+
+  it('renders the dragged chip in an overlay outside the clipping group (2026-07-12 report)', async () => {
+    const user = userEvent.setup();
+    render(<Harness initial={sampleLayout} />);
+
+    const handle = screen.getByRole('button', { name: 'Reorder Kills' });
+    handle.focus();
+    await user.keyboard('{Enter}');
+    await waitFor(() => {
+      expect(handle).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    // The groups clip their content (overflow-hidden) — the moving chip must
+    // live in a portaled overlay, or it disappears when it crosses the
+    // group border.
+    const overlay = screen.getByTestId('drag-overlay-chip');
+    expect(overlay).toHaveTextContent('Kills');
+    expect(group('Match totals').contains(overlay)).toBe(false);
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByTestId('drag-overlay-chip')).not.toBeInTheDocument();
+    });
   });
 
   it('reorders a field via the dnd-kit keyboard path (lift, arrow, drop)', async () => {

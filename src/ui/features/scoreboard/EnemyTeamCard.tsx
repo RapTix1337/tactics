@@ -56,7 +56,7 @@ export function EnemyTeamCard({ state }: { readonly state: ActiveScoreboardState
                   label={`Loss streak: ${enemyTeam.lossStreak}`}
                   filled={Math.min(enemyTeam.lossStreak, LOSS_PIP_SLOTS)}
                   total={LOSS_PIP_SLOTS}
-                  filledClassName="bg-amber-500"
+                  filledClassName={enemyTeam.side === 'CT' ? 'bg-side-ct' : 'bg-side-t'}
                 />
               )
             }

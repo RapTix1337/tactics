@@ -72,6 +72,22 @@ describe('ScoreHeader', () => {
     ).toBeInTheDocument();
   });
 
+  it('fills the loss pips in each team side color (2026-07-12 report)', () => {
+    render(
+      <ScoreHeader
+        state={makeState({
+          myTeam: { side: 'CT', score: 8, lossStreak: 2, timeoutsRemaining: 1 },
+          enemyTeam: { side: 'T', score: 8, lossStreak: 3, timeoutsRemaining: 1 },
+        })}
+      />,
+    );
+
+    const minePips = within(myTeamGroup()).getByRole('img', { name: 'Loss streak: 2' });
+    expect(minePips.querySelectorAll('.bg-side-ct')).toHaveLength(2);
+    const enemyPips = within(enemyTeamGroup()).getByRole('img', { name: 'Loss streak: 3' });
+    expect(enemyPips.querySelectorAll('.bg-side-t')).toHaveLength(3);
+  });
+
   it('renders timeout pips remaining-only — one pip per remaining timeout', () => {
     render(
       <ScoreHeader

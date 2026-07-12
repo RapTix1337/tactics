@@ -53,11 +53,13 @@ export interface ScoreboardPlayerState {
   readonly roundHsKills: number | null;
 }
 
-/** Locally accumulated stats (HS%); approximate when started mid-match. */
+/** Locally accumulated stats (HS%, HS count); approximate when started mid-match. */
 export interface ScoreboardDerivedState {
   readonly approximate: boolean;
   /** `null` until any own kill was observed. */
   readonly hsRatePercent: number | null;
+  /** Accumulated headshot kills; `null` until the own player was observed. */
+  readonly hsKills: number | null;
 }
 
 /**
@@ -104,6 +106,7 @@ const scoreboardPlayerStateSchema = z.object({
 const scoreboardDerivedStateSchema = z.object({
   approximate: z.boolean(),
   hsRatePercent: z.number().nullable(),
+  hsKills: z.number().nullable(),
 }) satisfies z.ZodType<ScoreboardDerivedState>;
 
 /**

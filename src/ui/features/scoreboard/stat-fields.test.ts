@@ -31,7 +31,7 @@ function makeState(overrides?: {
       roundHsKills: 1,
       ...overrides?.me,
     },
-    derived: { approximate: false, hsRatePercent: 58, ...overrides?.derived },
+    derived: { approximate: false, hsRatePercent: 58, hsKills: 11, ...overrides?.derived },
   };
 }
 
@@ -51,6 +51,7 @@ describe('STAT_FIELDS catalog', () => {
     ['kd', '1.58'],
     ['kMinusD', '+7'],
     ['hsRate', '58%'],
+    ['hsKills', '11'],
     ['health', '100'],
     ['armor', '100'],
     ['money', '$3,200'],
@@ -77,7 +78,7 @@ describe('STAT_FIELDS catalog', () => {
         roundKills: null,
         roundHsKills: null,
       },
-      derived: { hsRatePercent: null },
+      derived: { hsRatePercent: null, hsKills: null },
     });
     for (const id of FIELD_IDS) {
       expect(STAT_FIELDS[id].format(state).value).toBe('—');
@@ -110,11 +111,13 @@ describe('STAT_FIELDS catalog', () => {
     expect(tile.value).toBe('58%');
   });
 
-  it('marks only the HS rate approximate, and only while accumulation is incomplete', () => {
+  it('marks only the accumulated fields approximate, and only while incomplete', () => {
     const approximate = makeState({ derived: { approximate: true } });
     expect(STAT_FIELDS.hsRate.format(approximate).approximate).toBe(true);
+    expect(STAT_FIELDS.hsKills.format(approximate).approximate).toBe(true);
     expect(STAT_FIELDS.hsRate.format(makeState()).approximate).toBe(false);
-    for (const id of FIELD_IDS.filter((fieldId) => fieldId !== 'hsRate')) {
+    expect(STAT_FIELDS.hsKills.format(makeState()).approximate).toBe(false);
+    for (const id of FIELD_IDS.filter((fieldId) => fieldId !== 'hsRate' && fieldId !== 'hsKills')) {
       expect(STAT_FIELDS[id].format(approximate).approximate).toBe(false);
     }
   });

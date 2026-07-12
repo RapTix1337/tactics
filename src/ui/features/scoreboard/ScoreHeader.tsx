@@ -55,7 +55,7 @@ function TeamBlock({
                 label={`Loss streak: ${team.lossStreak}`}
                 filled={Math.min(team.lossStreak, LOSS_PIP_SLOTS)}
                 total={LOSS_PIP_SLOTS}
-                filledClassName="bg-amber-500"
+                filledClassName={team.side === 'CT' ? 'bg-side-ct' : 'bg-side-t'}
               />
             </MiniIndicator>
           )}

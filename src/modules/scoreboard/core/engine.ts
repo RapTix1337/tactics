@@ -112,8 +112,10 @@ export function createScoreboardEngine(deps: { logger: Logger }): ScoreboardEngi
     if (input.mapName === null || input.map === null) return;
     if (resolveModeRules(input.map.mode) === null) return;
     const player = ownPlayerOf(input);
+    const displayRound = deriveDisplayRound(input.map, input.round);
     const { wasReset } = accumulator.observe({
-      displayRound: deriveDisplayRound(input.map, input.round),
+      displayRound,
+      roundOver: input.round?.phase === 'over' || input.map.phase === 'gameover',
       own:
         player === null
           ? null
@@ -123,7 +125,12 @@ export function createScoreboardEngine(deps: { logger: Logger }): ScoreboardEngi
               roundHsKills: player.state?.roundHsKills ?? null,
             },
     });
-    if (wasReset) firstHalfSideMemory = null;
+    if (wasReset) {
+      firstHalfSideMemory = null;
+      // Diagnosis trail for unexpected mid-match resets (round numbers only
+      // — ADR-030 keeps ids/names out of logs).
+      deps.logger.debug('scoreboard accumulation reset', { displayRound });
+    }
   }
 
   function deriveState(input: LiveMatchInput): ScoreboardState {
@@ -273,6 +280,7 @@ function statesEqual(a: ScoreboardState, b: ScoreboardState): boolean {
     playerStatesEqual(a.me, b.me) &&
     a.derived.approximate === b.derived.approximate &&
     a.derived.hsRatePercent === b.derived.hsRatePercent &&
+    a.derived.hsKills === b.derived.hsKills &&
     a.roundHistory.length === b.roundHistory.length &&
     a.roundHistory.every((outcome, index) => outcome === b.roundHistory[index])
   );

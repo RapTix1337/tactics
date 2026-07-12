@@ -14,11 +14,21 @@
 export interface HsDerivedState {
   readonly approximate: boolean;
   readonly hsRatePercent: number | null;
+  /** Accumulated headshot kills; `null` until the own player was observed. */
+  readonly hsKills: number | null;
 }
 
 export interface HsObservation {
   /** The engine's 1-based display round for this payload. */
   readonly displayRound: number;
+  /**
+   * The display round was derived from an `over`/`gameover` phase. CS2
+   * updates `round.phase` and `map.round` non-atomically at round end, so
+   * such a snapshot can transiently derive one round *back* — never treat
+   * that as a new match (2026-07-12 regression). Real restarts land in
+   * warmup/freezetime, never in `over`.
+   */
+  readonly roundOver?: boolean;
   /** Own-identity counters, or `null` for foreign/absent player blocks. */
   readonly own: {
     readonly kills: number | null;
@@ -69,12 +79,18 @@ export function createHsAccumulator(): HsAccumulator {
 
   return {
     observe(observation: HsObservation): HsObservationResult {
-      const { displayRound, own } = observation;
+      const { own } = observation;
+      let { displayRound } = observation;
 
       // A regression means a new match on the same map (mp_restartgame,
       // rematch without a menu hop); design §2.2 reset detection. Map
       // changes and menus reset via the engine before this is reached.
-      const roundRegressed = lastDisplayRound !== null && displayRound < lastDisplayRound;
+      // Regressions derived from an `over` phase are excluded: they are
+      // torn round-end snapshots (see `roundOver`), not restarts.
+      const roundRegressed =
+        lastDisplayRound !== null &&
+        displayRound < lastDisplayRound &&
+        observation.roundOver !== true;
       const killsRegressed =
         own?.kills !== null &&
         own?.kills !== undefined &&
@@ -82,6 +98,12 @@ export function createHsAccumulator(): HsAccumulator {
         own.kills < lastOwnKills;
       const wasReset = roundRegressed || killsRegressed;
       if (wasReset) clear();
+
+      // Clamp a surviving (torn) regression so the pending round keeps its
+      // real key — re-keying it backward would fold the round twice.
+      if (!wasReset && lastDisplayRound !== null && displayRound < lastDisplayRound) {
+        displayRound = lastDisplayRound;
+      }
 
       if (pending !== null && displayRound > pending.displayRound) {
         foldedKills += pending.kills;
@@ -110,7 +132,7 @@ export function createHsAccumulator(): HsAccumulator {
     },
 
     getDerived(): HsDerivedState {
-      if (firstSight === null) return { approximate: true, hsRatePercent: null };
+      if (firstSight === null) return { approximate: true, hsRatePercent: null, hsKills: null };
       // Approximate when kills exist that accumulation can never attribute:
       // a start past round 1, or first-sight match kills beyond the pending
       // round's own kills (spec AC 10, design §2.2).
@@ -120,6 +142,7 @@ export function createHsAccumulator(): HsAccumulator {
       return {
         approximate,
         hsRatePercent: kills > 0 ? (hsKills / kills) * 100 : null,
+        hsKills,
       };
     },
 

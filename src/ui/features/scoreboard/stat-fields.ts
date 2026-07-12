@@ -82,6 +82,13 @@ export const STAT_FIELDS: Record<FieldId, StatField> = {
       approximate: derived.approximate,
     }),
   },
+  hsKills: {
+    label: 'Headshots',
+    format: ({ derived }) => ({
+      value: derived.hsKills === null ? PLACEHOLDER : String(derived.hsKills),
+      approximate: derived.approximate,
+    }),
+  },
   health: {
     label: 'Health',
     format: ({ me }) => ({

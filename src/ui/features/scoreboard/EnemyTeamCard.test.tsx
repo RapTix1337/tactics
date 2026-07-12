@@ -41,6 +41,19 @@ describe('EnemyTeamCard', () => {
   });
 
   it.each([
+    ['T', 'bg-side-t'],
+    ['CT', 'bg-side-ct'],
+  ] as const)(
+    'fills the loss pips in the enemy side color (%s, 2026-07-12 report)',
+    (side, pipClass) => {
+      const card = renderCard({ side, lossStreak: 2 });
+
+      const pips = within(card).getByRole('img', { name: 'Loss streak: 2' });
+      expect(pips.querySelectorAll(`.${pipClass}`)).toHaveLength(2);
+    },
+  );
+
+  it.each([
     [0, '$1,400'],
     [2, '$2,400'],
     [5, '$3,400'],

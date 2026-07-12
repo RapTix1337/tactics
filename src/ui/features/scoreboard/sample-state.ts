@@ -45,7 +45,7 @@ export const SAMPLE_SCOREBOARD_STATE: ActiveScoreboardState = {
     roundKills: 1,
     roundHsKills: 1,
   },
-  derived: { approximate: true, hsRatePercent: 58 },
+  derived: { approximate: true, hsRatePercent: 58, hsKills: 11 },
 };
 
 /** The default grouping of 02-design.md §4, as preview/test sample layout. */

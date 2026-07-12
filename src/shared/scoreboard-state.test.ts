@@ -25,7 +25,7 @@ const activeSlice: ScoreboardState = {
     roundKills: 1,
     roundHsKills: 1,
   },
-  derived: { approximate: false, hsRatePercent: 40 },
+  derived: { approximate: false, hsRatePercent: 40, hsKills: 2 },
 };
 
 describe('scoreboardStateSchema', () => {
@@ -55,7 +55,7 @@ describe('scoreboardStateSchema', () => {
         roundKills: null,
         roundHsKills: null,
       },
-      derived: { approximate: true, hsRatePercent: null },
+      derived: { approximate: true, hsRatePercent: null, hsKills: null },
     };
     expect(scoreboardStateSchema.parse(sparse)).toEqual(sparse);
   });

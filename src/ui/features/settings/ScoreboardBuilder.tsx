@@ -1,7 +1,8 @@
-import type { Announcements, DragEndEvent } from '@dnd-kit/core';
+import type { Announcements, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import {
   closestCorners,
   DndContext,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   useDroppable,
@@ -90,6 +91,10 @@ export function ScoreboardBuilder({
   readonly onDraftChange: (next: DraftLayout) => void;
 }): JSX.Element {
   const [blocked, setBlocked] = useState(false);
+  // The chip currently dragged — rendered in a portaled DragOverlay because
+  // the group containers clip their content (overflow-hidden): without the
+  // overlay the chip disappears the moment it crosses its group's border.
+  const [activeField, setActiveField] = useState<FieldId | undefined>(undefined);
   const containerRef = useRef<HTMLElement | null>(null);
   const pendingFocusGroupId = useRef<string | undefined>(undefined);
   const sensors = useSensors(
@@ -125,7 +130,13 @@ export function ScoreboardBuilder({
     }
   }
 
+  function handleDragStart(event: DragStartEvent): void {
+    const activeId = String(event.active.id);
+    setActiveField(isFieldId(activeId) ? activeId : undefined);
+  }
+
   function handleDragEnd(event: DragEndEvent): void {
+    setActiveField(undefined);
     const activeId = String(event.active.id);
     const overId = event.over === null ? null : String(event.over.id);
     if (overId === null || overId === activeId) {
@@ -179,7 +190,11 @@ export function ScoreboardBuilder({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onDragCancel={() => {
+          setActiveField(undefined);
+        }}
         accessibility={{ announcements }}
       >
         <div className="flex flex-col gap-2">
@@ -234,6 +249,17 @@ export function ScoreboardBuilder({
             apply(clickAddField(draft, field));
           }}
         />
+        <DragOverlay>
+          {activeField !== undefined && (
+            <div
+              data-testid="drag-overlay-chip"
+              className="flex w-fit cursor-grabbing items-center gap-1 rounded-lg border bg-card py-1 pr-1 pl-1.5 text-[13px] font-medium shadow-md"
+            >
+              <GripVerticalIcon aria-hidden="true" className="size-3.5 text-muted-foreground" />
+              {STAT_FIELDS[activeField].label}
+            </div>
+          )}
+        </DragOverlay>
       </DndContext>
     </section>
   );

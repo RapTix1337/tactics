@@ -73,7 +73,7 @@ const eventScoreboard: ScoreboardState = {
     roundKills: 0,
     roundHsKills: 0,
   },
-  derived: { approximate: false, hsRatePercent: 40 },
+  derived: { approximate: false, hsRatePercent: 40, hsKills: 2 },
 };
 
 function createFakeBridge(): {

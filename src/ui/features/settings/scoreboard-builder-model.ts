@@ -36,7 +36,7 @@ export const FIELD_CATEGORIES: readonly FieldCategory[] = [
     approximate: false,
     fields: ['kills', 'assists', 'deaths', 'mvps', 'score', 'kd', 'kMinusD'],
   },
-  { label: 'Derived', approximate: true, fields: ['hsRate'] },
+  { label: 'Derived', approximate: true, fields: ['hsRate', 'hsKills'] },
   {
     label: 'Live round state',
     approximate: false,

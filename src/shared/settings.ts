@@ -26,6 +26,7 @@ export const FIELD_IDS = [
   'kd',
   'kMinusD',
   'hsRate',
+  'hsKills',
   'health',
   'armor',
   'money',
