@@ -18,6 +18,9 @@ const snapshotSettings: Settings = {
   autostart: false,
   closeToTray: true,
   autoUpdate: true,
+  scoreboardEnabled: true,
+  scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
+  gsiTiming: 'default',
 };
 
 const snapshotGameState: GameState = { status: 'waiting', map: { kind: 'none' } };

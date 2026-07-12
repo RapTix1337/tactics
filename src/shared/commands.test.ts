@@ -38,6 +38,9 @@ const validSettings: Settings = {
   autostart: false,
   closeToTray: true,
   autoUpdate: true,
+  scoreboardEnabled: true,
+  scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
+  gsiTiming: 'default',
 };
 
 describe('appGetSnapshot', () => {
@@ -70,11 +73,19 @@ describe('settingsUpdate', () => {
     expect(settingsUpdate.channel).toBe('cmd:settings.update');
   });
 
-  it('accepts any partial of the six settings, including the empty one', () => {
+  it('accepts any partial of the settings fields, including the empty one', () => {
     const { requestSchema } = settingsUpdate;
     expect(requestSchema.safeParse({}).success).toBe(true);
     expect(requestSchema.safeParse({ theme: 'light' }).success).toBe(true);
     expect(requestSchema.safeParse({ theme: 'system', autostart: true }).success).toBe(true);
+    // The scoreboard fields ride the same command — no new command (ADR-053).
+    expect(
+      requestSchema.safeParse({
+        scoreboardEnabled: false,
+        scoreboardLayout: { groups: [{ label: 'Mine', fields: ['kills'] }] },
+        gsiTiming: 'fast',
+      }).success,
+    ).toBe(true);
   });
 
   it('accepts explicit null to reset cs2Path/gsiPort to automatic', () => {
@@ -88,6 +99,8 @@ describe('settingsUpdate', () => {
     expect(requestSchema.safeParse({ gsiPort: 65536 }).success).toBe(false);
     expect(requestSchema.safeParse({ cs2Path: '' }).success).toBe(false);
     expect(requestSchema.safeParse({ autostart: 'yes' }).success).toBe(false);
+    expect(requestSchema.safeParse({ gsiTiming: 'turbo' }).success).toBe(false);
+    expect(requestSchema.safeParse({ scoreboardLayout: { groups: [] } }).success).toBe(false);
   });
 
   it('responds with the full new settings state', () => {

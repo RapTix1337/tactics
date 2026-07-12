@@ -1,0 +1,3 @@
+ALTER TABLE `settings` ADD `scoreboard_enabled` integer DEFAULT 1 NOT NULL;--> statement-breakpoint
+ALTER TABLE `settings` ADD `scoreboard_layout` text DEFAULT '{"groups":[{"label":"Match totals","fields":["kills","deaths","assists","kd","mvps"]},{"label":"Derived","fields":["hsRate"]},{"label":"Live round state","fields":["health","armor","money","equipValue"]}]}' NOT NULL;--> statement-breakpoint
+ALTER TABLE `settings` ADD `gsi_timing` text DEFAULT 'default' NOT NULL;

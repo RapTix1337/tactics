@@ -16,6 +16,9 @@ const snapshot: AppSnapshot = {
     autostart: false,
     closeToTray: true,
     autoUpdate: true,
+    scoreboardEnabled: true,
+    scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
+    gsiTiming: 'default',
   },
   updateState: { status: 'idle', version: null, errorKind: null },
 };
