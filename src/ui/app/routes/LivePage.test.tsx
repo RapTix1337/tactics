@@ -13,15 +13,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { failure, success } from '../../../shared/envelope';
 import { PROJECT_REPOSITORY_URL } from '../../../shared/external-urls';
 import type { MapSummary } from '../../../shared/map-catalog';
+import type { Settings } from '../../../shared/settings';
+import { SAMPLE_SCOREBOARD_STATE } from '../../features/scoreboard/sample-state';
 import { openExternal } from '../../lib/ipc/external-links';
 import { loadMapList } from '../../lib/ipc/map-catalog';
+import { updateSettings } from '../../lib/ipc/settings';
 import { useAppStore } from '../../stores/app-store';
 import { useGameStateStore } from '../../stores/game-state-store';
 import { useMapCatalogStore } from '../../stores/map-catalog-store';
+import { useScoreboardStore } from '../../stores/scoreboard-store';
+import { useSettingsStore } from '../../stores/settings-store';
 import { LivePage } from './LivePage';
 
 vi.mock('../../lib/ipc/external-links', () => ({ openExternal: vi.fn() }));
 vi.mock('../../lib/ipc/map-catalog', () => ({ loadMapList: vi.fn() }));
+vi.mock('../../lib/ipc/settings', () => ({ updateSettings: vi.fn() }));
 
 // The map view has its own suite (MapView.test.tsx); the live page only
 // selects it, so a stub keeps these tests on the state selection.
@@ -47,6 +53,18 @@ const dust2 = mapWithProfile('de_dust2', 'Dust 2');
 const mirage = mapWithProfile('de_mirage', 'Mirage');
 const emptyNuke: MapSummary = { id: 'de_nuke', displayName: 'Nuke', profiles: [] };
 
+const storedSettings: Settings = {
+  theme: 'dark',
+  cs2Path: null,
+  gsiPort: null,
+  autostart: false,
+  closeToTray: true,
+  autoUpdate: true,
+  scoreboardEnabled: true,
+  scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
+  gsiTiming: 'default',
+};
+
 // The upload hint renders a router link, so the page needs a routing
 // context (the MapsOverview.test.tsx harness pattern); navigation itself is
 // covered by router.test.tsx.
@@ -70,9 +88,14 @@ describe('LivePage', () => {
     vi.mocked(loadMapList)
       .mockReset()
       .mockResolvedValue(success([dust2, mirage, emptyNuke]));
+    vi.mocked(updateSettings).mockReset().mockResolvedValue(success(storedSettings));
     useAppStore.setState({ ipcStatus: 'ready', lastError: undefined });
     useGameStateStore.setState({ gameState: undefined });
     useMapCatalogStore.setState({ list: [dust2, mirage, emptyNuke], profilesById: {} });
+    // Pre-snapshot defaults: no scoreboard slice, no settings — the plain
+    // map view path (every pre-SCB.9 test runs unchanged on top of these).
+    useScoreboardStore.setState({ scoreboard: undefined });
+    useSettingsStore.setState({ settings: undefined });
   });
 
   it('keeps the heading and the stable ipc-status selector in every state (E5.4)', async () => {
@@ -207,5 +230,101 @@ describe('LivePage', () => {
     renderLivePage();
 
     expect(await screen.findByText(/no map is active/)).toBeInTheDocument();
+  });
+
+  describe('scoreboard integration (SCB.9)', () => {
+    function liveOnDust2(): void {
+      useGameStateStore.setState({
+        gameState: { status: 'connected', map: { kind: 'resolved', mapId: 'de_dust2' } },
+      });
+    }
+
+    it('wraps the map in the scoreboard frame when the slice is active and the toggle is on', async () => {
+      liveOnDust2();
+      useScoreboardStore.setState({ scoreboard: SAMPLE_SCOREBOARD_STATE });
+      useSettingsStore.setState({ settings: storedSettings });
+      renderLivePage();
+
+      expect(await screen.findByRole('region', { name: 'Match score' })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'My performance' })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'Enemy team' })).toBeInTheDocument();
+      expect(screen.getByTestId('live-map-view')).toHaveTextContent('de_dust2');
+    });
+
+    it('renders the plain map view when the toggle is off (spec AC 6)', async () => {
+      liveOnDust2();
+      useScoreboardStore.setState({ scoreboard: SAMPLE_SCOREBOARD_STATE });
+      useSettingsStore.setState({
+        settings: { ...storedSettings, scoreboardEnabled: false },
+      });
+      renderLivePage();
+
+      expect(await screen.findByTestId('live-map-view')).toHaveTextContent('de_dust2');
+      expect(screen.queryByRole('region', { name: 'Match score' })).not.toBeInTheDocument();
+    });
+
+    it('renders the plain map view while the slice is inactive (spec AC 7)', async () => {
+      liveOnDust2();
+      useScoreboardStore.setState({ scoreboard: { active: false } });
+      useSettingsStore.setState({ settings: storedSettings });
+      renderLivePage();
+
+      expect(await screen.findByTestId('live-map-view')).toHaveTextContent('de_dust2');
+      expect(screen.queryByRole('region', { name: 'Match score' })).not.toBeInTheDocument();
+    });
+
+    it('renders the plain map view until the settings snapshot arrives', async () => {
+      liveOnDust2();
+      useScoreboardStore.setState({ scoreboard: SAMPLE_SCOREBOARD_STATE });
+      renderLivePage();
+
+      expect(await screen.findByTestId('live-map-view')).toHaveTextContent('de_dust2');
+      expect(screen.queryByRole('region', { name: 'Match score' })).not.toBeInTheDocument();
+    });
+
+    it('keeps the upload hint frameless on a map without a profile (spec AC 7)', async () => {
+      useGameStateStore.setState({
+        gameState: { status: 'connected', map: { kind: 'resolved', mapId: 'de_nuke' } },
+      });
+      useScoreboardStore.setState({ scoreboard: SAMPLE_SCOREBOARD_STATE });
+      useSettingsStore.setState({ settings: storedSettings });
+      renderLivePage();
+
+      expect(await screen.findByText(/has no radar image yet/)).toBeInTheDocument();
+      expect(screen.queryByRole('region', { name: 'Match score' })).not.toBeInTheDocument();
+    });
+
+    it('shows the header toggle while a supported match runs, even with the scoreboard off', async () => {
+      liveOnDust2();
+      useScoreboardStore.setState({ scoreboard: SAMPLE_SCOREBOARD_STATE });
+      useSettingsStore.setState({
+        settings: { ...storedSettings, scoreboardEnabled: false },
+      });
+      renderLivePage();
+
+      expect(await screen.findByRole('switch', { name: 'Scoreboard' })).not.toBeChecked();
+    });
+
+    it('hides the header toggle while the slice is inactive', async () => {
+      liveOnDust2();
+      useScoreboardStore.setState({ scoreboard: { active: false } });
+      useSettingsStore.setState({ settings: storedSettings });
+      renderLivePage();
+
+      expect(await screen.findByTestId('live-map-view')).toBeInTheDocument();
+      expect(screen.queryByRole('switch', { name: 'Scoreboard' })).not.toBeInTheDocument();
+    });
+
+    it('dispatches settings.update from the header toggle (spec AC 1)', async () => {
+      liveOnDust2();
+      useScoreboardStore.setState({ scoreboard: SAMPLE_SCOREBOARD_STATE });
+      useSettingsStore.setState({ settings: storedSettings });
+      const user = userEvent.setup();
+      renderLivePage();
+
+      await user.click(await screen.findByRole('switch', { name: 'Scoreboard' }));
+
+      expect(updateSettings).toHaveBeenCalledWith({ scoreboardEnabled: false });
+    });
   });
 });
