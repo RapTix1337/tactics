@@ -90,7 +90,11 @@ function StatTileView({
   readonly tile: StatTile;
 }): JSX.Element {
   return (
-    <div className="flex min-w-14 flex-1 flex-col-reverse gap-1 rounded-lg border bg-secondary/55 px-2 py-2">
+    <div
+      className={`flex flex-1 flex-col-reverse gap-1 rounded-lg border bg-secondary/55 px-2 py-2 ${
+        tile.wide === true ? 'min-w-[5.5rem]' : 'min-w-14'
+      }`}
+    >
       <dt className="truncate text-[9px] font-semibold tracking-wide text-muted-foreground uppercase">
         {label}
       </dt>

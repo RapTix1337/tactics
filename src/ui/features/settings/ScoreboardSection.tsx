@@ -111,7 +111,9 @@ function ScoreboardFields({ settings }: { readonly settings: Settings }): JSX.El
             — the live &quot;My performance&quot; card with sample data
           </span>
         </span>
-        <div className="max-w-[300px]">
+        {/* w-60 = the live frame's card column basis (ScoreboardFrame) — any
+            other width wraps the stat tiles differently than the live view. */}
+        <div className="w-60">
           <MyPerformanceCard layout={toLayout(draft)} state={SAMPLE_SCOREBOARD_STATE} />
         </div>
       </div>

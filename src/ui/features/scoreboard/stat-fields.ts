@@ -20,6 +20,9 @@ export interface StatTile {
   readonly healthPercent?: number;
   /** Helmet indicator — present on the armor tile only. */
   readonly helmet?: boolean;
+  /** Needs a wider tile — `$1,234`-format values overflow the default
+   * minimum width (up to `$16,000` must fit without crossing the border). */
+  readonly wide?: boolean;
 }
 
 export interface StatField {
@@ -39,7 +42,11 @@ function plainTile(value: number | null): StatTile {
 }
 
 function moneyTile(value: number | null): StatTile {
-  return { value: value === null ? PLACEHOLDER : formatMoney(value), approximate: false };
+  return {
+    value: value === null ? PLACEHOLDER : formatMoney(value),
+    approximate: false,
+    wide: true,
+  };
 }
 
 export const STAT_FIELDS: Record<FieldId, StatField> = {

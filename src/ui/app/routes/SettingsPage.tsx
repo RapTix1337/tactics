@@ -22,7 +22,12 @@ export function SettingsPage(): JSX.Element {
   const [repairOpen, setRepairOpen] = useState(false);
 
   return (
-    <div className="flex h-full flex-col gap-8 overflow-y-auto p-4">
+    // `relative` keeps absolutely positioned descendants inside this scroll
+    // container — Radix form controls in a <form> render a hidden absolute
+    // <input> that would otherwise resolve to the sidebar inset and stretch
+    // the document below the h-svh shell (2026-07-12 regression,
+    // tests/e2e/settings-layout.spec.ts).
+    <div className="relative flex h-full flex-col gap-8 overflow-y-auto p-4">
       <h1 className="text-2xl font-semibold">Settings</h1>
       <SettingsForm />
       <ScoreboardSection />
