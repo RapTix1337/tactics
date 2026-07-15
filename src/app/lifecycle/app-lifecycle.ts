@@ -47,6 +47,7 @@ import {
 import { registerGsiCommands, runStartupConfigVerify } from '../ipc/gsi-commands';
 import { registerLogsCommands } from '../ipc/logs-commands';
 import { registerMapsCommands } from '../ipc/maps-commands';
+import { registerOverlayCommands } from '../ipc/overlay-commands';
 import { describeError } from '../ipc/register-command';
 import { registerSettingsCommands } from '../ipc/settings-commands';
 import { registerSteamCommands } from '../ipc/steam-commands';
@@ -304,93 +305,6 @@ export function startApp(): void {
       void gameStateWiring.stop();
     });
 
-    // Registered before any window exists, so no invoke can precede them.
-    const commandDeps = createElectronCommandDeps(createLogger('ipc'));
-    registerAppCommands(
-      commandDeps,
-      createLogger('renderer'),
-      {
-        getGameState: () => gameStateWiring.getGameState(),
-        // Literal until OVL.5 wires the manager's state into the snapshot.
-        getOverlayState: () => ({ open: false }),
-        getScoreboardState: () => scoreboardWiring.getScoreboardState(),
-        getSettings: () => settingsRepository.getSettings(),
-        getUpdateState: () => updateService.getState(),
-      },
-      // Only contract-allowlisted URLs reach this (the request schema).
-      { openExternal: (url) => shell.openExternal(url) },
-    );
-    registerLogsCommands(commandDeps, createElectronLogsDeps());
-    // The wrapped update path: persist plus every settings side effect. The
-    // settings command and the tray's overlay-opacity reset share it, so both
-    // behave identically (live-overlay 02-design.md §2.1).
-    const applySettingsUpdate = (partial: Partial<Settings>): Settings => {
-      const next = settingsRepository.updateSettings(partial);
-      // A gsiPort change must rebind the intake (05-gsi.md error case 3);
-      // fire-and-forget — the response must not wait on the restart.
-      void gameStateWiring.handleSettingsChanged();
-      // E17.2: an autostart toggle registers/deregisters immediately.
-      applyAutostart(next.autostart);
-      // E18.1: an autoUpdate toggle starts/stops the periodic check cycle.
-      updateService.handleSettingsChanged();
-      return next;
-    };
-    registerSettingsCommands(commandDeps, {
-      updateSettings: applySettingsUpdate,
-      publisher: eventPublisher,
-    });
-    registerSteamCommands(
-      commandDeps,
-      createElectronSteamDeps({
-        updateSettings: (partial) => settingsRepository.updateSettings(partial),
-        publisher: eventPublisher,
-      }),
-    );
-    registerGsiCommands(commandDeps, gsiWiring.commandDeps);
-    registerUpdatesCommands(commandDeps, {
-      checkNow: () => updateService.checkNow(),
-      quitAndInstall: () => updateService.quitAndInstall(),
-    });
-
-    // Maps before intake: the first payload may already need resolution.
-    // Fire-and-forget like the verify below — the window must not wait on fs
-    // scans or the port bind; early snapshots simply carry map "none".
-    const mapsLoaded = mapRegistry.loadAll();
-    void mapsLoaded
-      .then(() => gameStateWiring.start())
-      .catch((error: unknown) => {
-        logger.error('Starting the live state pipeline failed', {
-          error: describeError(error),
-        });
-      });
-    registerMapsCommands(commandDeps, {
-      // loadAll degrades scan errors to warnings and never rejects by design;
-      // the catch keeps a violated assumption from failing every maps command.
-      mapsLoaded: mapsLoaded.catch(() => undefined),
-      listMaps: () => mapRegistry.listMaps(),
-      getMap: (mapId) => mapRegistry.getMap(mapId),
-      profiles: profileRepository,
-      images: profileImageStore,
-      showImageOpenDialog: createElectronMapsImageDialog(),
-    });
-
-    // Fire-and-forget by design (never throws): the window must not wait on
-    // reg.exe + fs probing; the machine state is consumed via the gameState
-    // events published by gameStateWiring.
-    void runStartupConfigVerify(gsiWiring.commandDeps, gsiLogger);
-
-    hardenSession(devServerUrl !== undefined);
-
-    // Multi-size icon.ico shared by the window/taskbar icon and the tray. In
-    // dev it reads the repo `build/` folder; packaged it reads the resource
-    // copied via electron-builder `extraResources`. Same resolution as the
-    // bundled map data above.
-    const appIconPath = resolveAppIconPath({
-      isPackaged: app.isPackaged,
-      resourcesPath: process.resourcesPath,
-      appPath: app.getAppPath(),
-    });
-
     // Restore clamping targets the displays present right now (a monitor may
     // be gone since the last run). Primary first — getAllDisplays guarantees
     // no order, but the planner falls back to the first work area on zero
@@ -405,7 +319,8 @@ export function startApp(): void {
 
     // The overlay window manager (live-overlay 02-design.md §2.1, OVL.4):
     // testable lifecycle logic in overlay-window.ts; only this thin window
-    // factory touches Electron. OVL.5 wires the manager into the IPC layer.
+    // factory touches Electron. Created before the command registrations so
+    // the snapshot slice and the overlay commands read the real manager.
     const overlayManager = createOverlayWindowManager({
       createWindow: (restoredBounds) => {
         const overlayWindow = new BrowserWindow(
@@ -460,6 +375,102 @@ export function startApp(): void {
         operationalStateRepository.updateOperationalState({ overlayBounds: bounds });
       },
       logger,
+    });
+
+    // Registered before any window exists, so no invoke can precede them.
+    const commandDeps = createElectronCommandDeps(createLogger('ipc'));
+    registerAppCommands(
+      commandDeps,
+      createLogger('renderer'),
+      {
+        getGameState: () => gameStateWiring.getGameState(),
+        getOverlayState: () => ({ open: overlayManager.isOpen() }),
+        getScoreboardState: () => scoreboardWiring.getScoreboardState(),
+        getSettings: () => settingsRepository.getSettings(),
+        getUpdateState: () => updateService.getState(),
+      },
+      // Only contract-allowlisted URLs reach this (the request schema).
+      { openExternal: (url) => shell.openExternal(url) },
+    );
+    registerLogsCommands(commandDeps, createElectronLogsDeps());
+    // The wrapped update path: persist plus every settings side effect. The
+    // settings command and the tray's overlay-opacity reset share it, so both
+    // behave identically (live-overlay 02-design.md §2.1).
+    const applySettingsUpdate = (partial: Partial<Settings>): Settings => {
+      const next = settingsRepository.updateSettings(partial);
+      // A gsiPort change must rebind the intake (05-gsi.md error case 3);
+      // fire-and-forget — the response must not wait on the restart.
+      void gameStateWiring.handleSettingsChanged();
+      // E17.2: an autostart toggle registers/deregisters immediately.
+      applyAutostart(next.autostart);
+      // E18.1: an autoUpdate toggle starts/stops the periodic check cycle.
+      updateService.handleSettingsChanged();
+      return next;
+    };
+    registerSettingsCommands(commandDeps, {
+      updateSettings: applySettingsUpdate,
+      publisher: eventPublisher,
+    });
+    // OVL.5: commands dispatch onto the manager; the manager's state feed is
+    // published as evt:overlay.changed inside the registration (one tested
+    // surface — maintainer decision), so both close paths reach every window.
+    registerOverlayCommands(commandDeps, {
+      open: overlayManager.open,
+      close: overlayManager.close,
+      resize: overlayManager.resize,
+      onStateChanged: overlayManager.onStateChanged,
+      publisher: eventPublisher,
+    });
+    registerSteamCommands(
+      commandDeps,
+      createElectronSteamDeps({
+        updateSettings: (partial) => settingsRepository.updateSettings(partial),
+        publisher: eventPublisher,
+      }),
+    );
+    registerGsiCommands(commandDeps, gsiWiring.commandDeps);
+    registerUpdatesCommands(commandDeps, {
+      checkNow: () => updateService.checkNow(),
+      quitAndInstall: () => updateService.quitAndInstall(),
+    });
+
+    // Maps before intake: the first payload may already need resolution.
+    // Fire-and-forget like the verify below — the window must not wait on fs
+    // scans or the port bind; early snapshots simply carry map "none".
+    const mapsLoaded = mapRegistry.loadAll();
+    void mapsLoaded
+      .then(() => gameStateWiring.start())
+      .catch((error: unknown) => {
+        logger.error('Starting the live state pipeline failed', {
+          error: describeError(error),
+        });
+      });
+    registerMapsCommands(commandDeps, {
+      // loadAll degrades scan errors to warnings and never rejects by design;
+      // the catch keeps a violated assumption from failing every maps command.
+      mapsLoaded: mapsLoaded.catch(() => undefined),
+      listMaps: () => mapRegistry.listMaps(),
+      getMap: (mapId) => mapRegistry.getMap(mapId),
+      profiles: profileRepository,
+      images: profileImageStore,
+      showImageOpenDialog: createElectronMapsImageDialog(),
+    });
+
+    // Fire-and-forget by design (never throws): the window must not wait on
+    // reg.exe + fs probing; the machine state is consumed via the gameState
+    // events published by gameStateWiring.
+    void runStartupConfigVerify(gsiWiring.commandDeps, gsiLogger);
+
+    hardenSession(devServerUrl !== undefined);
+
+    // Multi-size icon.ico shared by the window/taskbar icon and the tray. In
+    // dev it reads the repo `build/` folder; packaged it reads the resource
+    // copied via electron-builder `extraResources`. Same resolution as the
+    // bundled map data above.
+    const appIconPath = resolveAppIconPath({
+      isPackaged: app.isPackaged,
+      resourcesPath: process.resourcesPath,
+      appPath: app.getAppPath(),
     });
 
     // Shows the existing window or recreates it after close-to-tray. A
