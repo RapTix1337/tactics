@@ -63,6 +63,9 @@ const storedSettings: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
   gsiTiming: 'default',
+  overlayOpacity: 1,
+  overlayMapExempt: false,
+  overlayScoreboardExempt: false,
 };
 
 // The upload hint renders a router link, so the page needs a routing

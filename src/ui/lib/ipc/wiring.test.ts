@@ -23,6 +23,9 @@ const snapshotSettings: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
   gsiTiming: 'default',
+  overlayOpacity: 1,
+  overlayMapExempt: false,
+  overlayScoreboardExempt: false,
 };
 
 const snapshotGameState: GameState = { status: 'waiting', map: { kind: 'none' } };
@@ -33,6 +36,8 @@ const snapshotScoreboard: ScoreboardState = { active: false };
 
 const snapshot: AppSnapshot = {
   gameState: snapshotGameState,
+  // Consumed by the OVL.9 overlay store; until then only the type needs it.
+  overlay: { open: false },
   scoreboard: snapshotScoreboard,
   settings: snapshotSettings,
   updateState: snapshotUpdateState,

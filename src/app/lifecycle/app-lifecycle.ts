@@ -301,6 +301,8 @@ export function startApp(): void {
       createLogger('renderer'),
       {
         getGameState: () => gameStateWiring.getGameState(),
+        // Literal until the OVL.4 window manager exists; OVL.5 wires it up.
+        getOverlayState: () => ({ open: false }),
         getScoreboardState: () => scoreboardWiring.getScoreboardState(),
         getSettings: () => settingsRepository.getSettings(),
         getUpdateState: () => updateService.getState(),

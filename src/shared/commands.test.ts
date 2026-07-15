@@ -16,6 +16,9 @@ import {
   mapsReplaceProfileImage,
   mapsSetDefaultProfile,
   mapsUpdateCallouts,
+  overlayClose,
+  overlayOpen,
+  overlayResize,
   settingsUpdate,
   steamPickCs2Path,
   updatesCheck,
@@ -24,12 +27,15 @@ import {
 import { EXTERNAL_URLS } from './external-urls';
 import type { GameState } from './game-state';
 import type { MapProfileDetails, MapSummary } from './map-catalog';
+import type { OverlayState } from './overlay-state';
 import type { Settings } from './settings';
 import type { UpdateState } from './update-state';
 
 const validGameState: GameState = { status: 'waiting', map: { kind: 'none' } };
 
 const validUpdateState: UpdateState = { status: 'idle', version: null, errorKind: null };
+
+const validOverlayState: OverlayState = { open: false };
 
 const validSettings: Settings = {
   theme: 'dark',
@@ -41,6 +47,9 @@ const validSettings: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
   gsiTiming: 'default',
+  overlayOpacity: 1,
+  overlayMapExempt: false,
+  overlayScoreboardExempt: false,
 };
 
 describe('appGetSnapshot', () => {
@@ -53,6 +62,7 @@ describe('appGetSnapshot', () => {
     expect(
       appGetSnapshot.responseSchema.safeParse({
         gameState: validGameState,
+        overlay: validOverlayState,
         scoreboard: { active: false },
         settings: validSettings,
         updateState: validUpdateState,
@@ -65,6 +75,16 @@ describe('appGetSnapshot', () => {
         gameState: validGameState,
         scoreboard: { active: false },
         settings: validSettings,
+      }).success,
+    ).toBe(false);
+    // The overlay slice is mandatory too — a recreated main window needs it
+    // to render the live-page placeholder correctly (OVL.1, ADR-058).
+    expect(
+      appGetSnapshot.responseSchema.safeParse({
+        gameState: validGameState,
+        scoreboard: { active: false },
+        settings: validSettings,
+        updateState: validUpdateState,
       }).success,
     ).toBe(false);
   });
@@ -88,6 +108,14 @@ describe('settingsUpdate', () => {
         gsiTiming: 'fast',
       }).success,
     ).toBe(true);
+    // The overlay fields ride it too — the ADR-053 precedent (ADR-058, OVL.1).
+    expect(
+      requestSchema.safeParse({
+        overlayOpacity: 0.5,
+        overlayMapExempt: true,
+        overlayScoreboardExempt: true,
+      }).success,
+    ).toBe(true);
   });
 
   it('accepts explicit null to reset cs2Path/gsiPort to automatic', () => {
@@ -103,6 +131,10 @@ describe('settingsUpdate', () => {
     expect(requestSchema.safeParse({ autostart: 'yes' }).success).toBe(false);
     expect(requestSchema.safeParse({ gsiTiming: 'turbo' }).success).toBe(false);
     expect(requestSchema.safeParse({ scoreboardLayout: { groups: [] } }).success).toBe(false);
+    expect(requestSchema.safeParse({ overlayOpacity: 1.5 }).success).toBe(false);
+    expect(requestSchema.safeParse({ overlayOpacity: -0.1 }).success).toBe(false);
+    expect(requestSchema.safeParse({ overlayMapExempt: 'yes' }).success).toBe(false);
+    expect(requestSchema.safeParse({ overlayScoreboardExempt: 1 }).success).toBe(false);
   });
 
   it('responds with the full new settings state', () => {
@@ -497,5 +529,42 @@ describe('steamPickCs2Path', () => {
     // INVALID_PATH travels as a named error in the envelope, never as a status.
     expect(responseSchema.safeParse({ status: 'selected' }).success).toBe(false);
     expect(responseSchema.safeParse({ status: 'invalid' }).success).toBe(false);
+  });
+});
+
+describe('overlayOpen', () => {
+  it('lives on the contract channel, takes no request, responds with the full overlay slice', () => {
+    expect(overlayOpen.channel).toBe('cmd:overlay.open');
+    expect(overlayOpen.requestSchema.safeParse(undefined).success).toBe(true);
+    expect(overlayOpen.responseSchema.safeParse({ open: true }).success).toBe(true);
+    expect(overlayOpen.responseSchema.safeParse(undefined).success).toBe(false);
+  });
+});
+
+describe('overlayClose', () => {
+  it('lives on the contract channel, takes no request, responds with the full overlay slice', () => {
+    expect(overlayClose.channel).toBe('cmd:overlay.close');
+    expect(overlayClose.requestSchema.safeParse(undefined).success).toBe(true);
+    expect(overlayClose.responseSchema.safeParse({ open: false }).success).toBe(true);
+    expect(overlayClose.responseSchema.safeParse(undefined).success).toBe(false);
+  });
+});
+
+describe('overlayResize', () => {
+  it('lives on the contract channel and only acknowledges (main owns the resulting bounds)', () => {
+    expect(overlayResize.channel).toBe('cmd:overlay.resize');
+    expect(overlayResize.responseSchema.safeParse(undefined).success).toBe(true);
+  });
+
+  it('requires an edge from the closed enum plus screen coordinates', () => {
+    const { requestSchema } = overlayResize;
+    expect(
+      requestSchema.safeParse({ edge: 'bottom-right', pointerX: 1620, pointerY: 980 }).success,
+    ).toBe(true);
+    expect(requestSchema.safeParse({ edge: 'middle', pointerX: 0, pointerY: 0 }).success).toBe(
+      false,
+    );
+    expect(requestSchema.safeParse({ edge: 'left' }).success).toBe(false);
+    expect(requestSchema.safeParse(undefined).success).toBe(false);
   });
 });

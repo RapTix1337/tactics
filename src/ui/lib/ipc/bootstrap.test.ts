@@ -9,6 +9,7 @@ type SnapshotResult = CommandResult<AppSnapshot>;
 
 const snapshot: AppSnapshot = {
   gameState: { status: 'waiting', map: { kind: 'none' } },
+  overlay: { open: false },
   scoreboard: { active: false },
   settings: {
     theme: 'dark',
@@ -20,6 +21,9 @@ const snapshot: AppSnapshot = {
     scoreboardEnabled: true,
     scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
     gsiTiming: 'default',
+    overlayOpacity: 1,
+    overlayMapExempt: false,
+    overlayScoreboardExempt: false,
   },
   updateState: { status: 'idle', version: null, errorKind: null },
 };

@@ -28,6 +28,9 @@ const validSettings: Settings = {
   scoreboardEnabled: false,
   scoreboardLayout: validLayout,
   gsiTiming: 'fast',
+  overlayOpacity: 0.75,
+  overlayMapExempt: true,
+  overlayScoreboardExempt: false,
 };
 
 describe('settingsSchema', () => {
@@ -48,6 +51,26 @@ describe('settingsSchema', () => {
 
   it('accepts an update as a partial of the same fields (type level)', () => {
     expectTypeOf<SettingsUpdate>().toExtend<Partial<Settings>>();
+  });
+
+  it('bounds the overlay opacity to 0–1 inclusive (ADR-058: no floor)', () => {
+    const schema = SETTINGS_FIELD_SCHEMAS.overlayOpacity;
+    expect(schema.safeParse(0).success).toBe(true);
+    expect(schema.safeParse(1).success).toBe(true);
+    expect(schema.safeParse(0.35).success).toBe(true);
+    expect(schema.safeParse(-0.01).success).toBe(false);
+    expect(schema.safeParse(1.01).success).toBe(false);
+    expect(schema.safeParse('0.5').success).toBe(false);
+  });
+
+  it('keeps the overlay exemptions strict booleans', () => {
+    for (const field of ['overlayMapExempt', 'overlayScoreboardExempt'] as const) {
+      const schema = SETTINGS_FIELD_SCHEMAS[field];
+      expect(schema.safeParse(true).success).toBe(true);
+      expect(schema.safeParse(false).success).toBe(true);
+      expect(schema.safeParse(1).success).toBe(false);
+      expect(schema.safeParse('true').success).toBe(false);
+    }
   });
 });
 

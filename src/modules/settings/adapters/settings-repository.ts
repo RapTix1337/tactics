@@ -46,6 +46,8 @@ const BOOLEAN_FIELDS = [
   'closeToTray',
   'autoUpdate',
   'scoreboardEnabled',
+  'overlayMapExempt',
+  'overlayScoreboardExempt',
 ] as const satisfies readonly BooleanSettingsField[];
 
 export function createSettingsRepository(

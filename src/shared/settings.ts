@@ -95,7 +95,10 @@ export const scoreboardLayoutSchema = z
     message: 'scoreboard layout needs at least one field',
   });
 
-/** The MVP settings of 01-requirements.md §9 plus the scoreboard fields (ADR-053). */
+/**
+ * The MVP settings of 01-requirements.md §9 plus the scoreboard fields
+ * (ADR-053) and the live-overlay fields (ADR-058).
+ */
 export interface Settings {
   readonly theme: Theme;
   /** Absolute CS2 install path; `null` = automatic detection via `steam`. */
@@ -108,6 +111,10 @@ export interface Settings {
   readonly scoreboardEnabled: boolean;
   readonly scoreboardLayout: ScoreboardLayout;
   readonly gsiTiming: GsiTiming;
+  /** Overlay base fade, 0–1 with no floor (ADR-058); exemptions pin a region to 1. */
+  readonly overlayOpacity: number;
+  readonly overlayMapExempt: boolean;
+  readonly overlayScoreboardExempt: boolean;
 }
 
 export type SettingsField = keyof Settings;
@@ -122,6 +129,9 @@ export const SETTINGS_FIELDS = [
   'scoreboardEnabled',
   'scoreboardLayout',
   'gsiTiming',
+  'overlayOpacity',
+  'overlayMapExempt',
+  'overlayScoreboardExempt',
 ] as const satisfies readonly SettingsField[];
 
 /**
@@ -140,6 +150,9 @@ export const SETTINGS_FIELD_SCHEMAS = {
   scoreboardEnabled: z.boolean(),
   scoreboardLayout: scoreboardLayoutSchema,
   gsiTiming: z.enum(GSI_TIMINGS),
+  overlayOpacity: z.number().min(0).max(1),
+  overlayMapExempt: z.boolean(),
+  overlayScoreboardExempt: z.boolean(),
 } satisfies { [K in SettingsField]: z.ZodType<Settings[K]> };
 
 /** The full settings slice: `settings.update` response, event payload, snapshot slice. */

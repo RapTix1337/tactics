@@ -335,7 +335,12 @@ describe('boolean codec coverage', () => {
   it('covers exactly the boolean settings fields', () => {
     // Completeness direction of the satisfies-pin in settings-repository.ts.
     expectTypeOf<BooleanSettingsField>().toEqualTypeOf<
-      'autostart' | 'closeToTray' | 'autoUpdate' | 'scoreboardEnabled'
+      | 'autostart'
+      | 'closeToTray'
+      | 'autoUpdate'
+      | 'scoreboardEnabled'
+      | 'overlayMapExempt'
+      | 'overlayScoreboardExempt'
     >();
   });
 });
