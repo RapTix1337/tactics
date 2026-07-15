@@ -32,15 +32,26 @@ export interface TrayMenuActions {
   readonly showWindow: () => void;
   /** Hide the main window; a no-op when no window exists. */
   readonly hideWindow: () => void;
+  /**
+   * Restore `overlayOpacity` to 1 through the wrapped settings-update path
+   * (live-overlay 02-design.md §2.1): with no opacity floor, an invisible
+   * overlay must stay recoverable even with the main window closed to tray.
+   */
+  readonly resetOverlayOpacity: () => void;
   /** Quit the app regardless of the close-to-tray setting. */
   readonly quit: () => void;
 }
 
-/** The tray context menu: show / hide / quit (ADR-020 single window + tray). */
+/**
+ * The tray context menu: show / hide / reset overlay opacity / quit
+ * (ADR-020 single window + tray; overlay recovery per ADR-058).
+ */
 export function buildTrayMenuTemplate(actions: TrayMenuActions): MenuItemConstructorOptions[] {
   return [
     { label: 'Show', click: (): void => actions.showWindow() },
     { label: 'Hide', click: (): void => actions.hideWindow() },
+    { type: 'separator' },
+    { label: 'Reset overlay opacity', click: (): void => actions.resetOverlayOpacity() },
     { type: 'separator' },
     { label: 'Quit', click: (): void => actions.quit() },
   ];

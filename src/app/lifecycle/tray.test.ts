@@ -24,14 +24,17 @@ describe('buildTrayMenuTemplate', () => {
   const actions: TrayMenuActions = {
     showWindow: vi.fn(),
     hideWindow: vi.fn(),
+    resetOverlayOpacity: vi.fn(),
     quit: vi.fn(),
   };
   const template = buildTrayMenuTemplate(actions);
 
-  it('offers show, hide, and quit separated from the window items', () => {
+  it('offers show, hide, the overlay-opacity reset, and quit, separated', () => {
     expect(template.map((item) => item.label ?? item.type)).toEqual([
       'Show',
       'Hide',
+      'separator',
+      'Reset overlay opacity',
       'separator',
       'Quit',
     ]);
@@ -40,6 +43,7 @@ describe('buildTrayMenuTemplate', () => {
   it.each([
     ['Show', 'showWindow'],
     ['Hide', 'hideWindow'],
+    ['Reset overlay opacity', 'resetOverlayOpacity'],
     ['Quit', 'quit'],
   ] as const)('dispatches %s to the %s action', (label, action) => {
     const item = template.find((candidate) => candidate.label === label);
