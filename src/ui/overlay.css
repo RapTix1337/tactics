@@ -1,0 +1,22 @@
+/* Overlay-scoped overrides on top of globals.css (live-overlay 02-design.md
+   §5.1): the window surface must stay genuinely see-through, so html/body
+   drop their opaque token background — content panels keep their own opaque
+   backgrounds for readability. Deliberately unlayered: unlayered rules beat
+   Tailwind's `@layer base` body background regardless of import order. */
+
+html,
+body {
+  background: transparent;
+}
+
+/* Window drag regions for the frameless overlay (chrome bar draggable, its
+   controls excluded). Classes instead of inline styles: -webkit-app-region
+   is not part of React's CSSProperties. */
+
+.app-region-drag {
+  -webkit-app-region: drag;
+}
+
+.app-region-no-drag {
+  -webkit-app-region: no-drag;
+}

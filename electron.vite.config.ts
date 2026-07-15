@@ -75,8 +75,7 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(import.meta.dirname, 'src/ui/index.html'),
-          // Second renderer entry: the overlay window (ADR-058; the OVL.4
-          // stub until OVL.7 lands the real entry).
+          // Second renderer entry: the overlay window (ADR-058, OVL.7).
           overlay: resolve(import.meta.dirname, 'src/ui/overlay.html'),
         },
       },
