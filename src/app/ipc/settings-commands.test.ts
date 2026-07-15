@@ -122,6 +122,23 @@ describe('registerSettingsCommands', () => {
     expect(getPersisted()).toEqual(expected);
   });
 
+  it('round-trips the overlay fields and publishes them (OVL.2, ADR-058)', async () => {
+    const { invoke, published, getPersisted } = setup();
+
+    const expected = {
+      ...SETTINGS_DEFAULTS,
+      overlayOpacity: 0.6,
+      overlayMapExempt: true,
+      overlayScoreboardExempt: true,
+    };
+    await expect(
+      invoke({ overlayOpacity: 0.6, overlayMapExempt: true, overlayScoreboardExempt: true }),
+    ).resolves.toEqual({ ok: true, data: expected });
+
+    expect(published).toEqual([{ channel: settingsChanged.channel, payload: expected }]);
+    expect(getPersisted()).toEqual(expected);
+  });
+
   it('rejects an invalid partial with INVALID_REQUEST — nothing persisted, no event', async () => {
     const { invoke, published, getPersisted } = setup();
 

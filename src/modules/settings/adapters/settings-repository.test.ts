@@ -235,6 +235,129 @@ describe('scoreboard and timing fields (SCB.3, ADR-053)', () => {
   });
 });
 
+describe('overlay fields (OVL.2, ADR-058)', () => {
+  it('round-trips the three overlay fields across close and reopen', () => {
+    const databasePath = newDatabasePath();
+    const first = createSettingsRepository(openPort(databasePath), silentLogger);
+    first.updateSettings({
+      overlayOpacity: 0.4,
+      overlayMapExempt: true,
+      overlayScoreboardExempt: true,
+    });
+    for (const connection of connections.splice(0)) {
+      connection.close();
+    }
+
+    const second = createSettingsRepository(openPort(databasePath), silentLogger);
+
+    expect(second.getSettings()).toEqual({
+      ...SETTINGS_DEFAULTS,
+      overlayOpacity: 0.4,
+      overlayMapExempt: true,
+      overlayScoreboardExempt: true,
+    });
+  });
+
+  it('falls back to full opacity on a non-numeric stored value (logged)', () => {
+    const warn = vi.fn();
+    const port = openPort();
+    const repository = createSettingsRepository(port, { ...silentLogger, warn });
+    repository.updateSettings({ overlayMapExempt: true });
+    port.drizzle.run(sql`update settings set overlay_opacity = 'high'`);
+
+    const settings = repository.getSettings();
+
+    expect(settings.overlayOpacity).toBe(SETTINGS_DEFAULTS.overlayOpacity);
+    expect(settings.overlayMapExempt).toBe(true);
+    expect(warn).toHaveBeenCalledWith('invalid stored settings value replaced by its default', {
+      field: 'overlayOpacity',
+    });
+  });
+
+  it('falls back to full opacity on an out-of-range stored value (logged)', () => {
+    const warn = vi.fn();
+    const port = openPort();
+    const repository = createSettingsRepository(port, { ...silentLogger, warn });
+    repository.updateSettings({ overlayOpacity: 0.5 });
+    port.drizzle.run(sql`update settings set overlay_opacity = 1.5`);
+
+    expect(repository.getSettings().overlayOpacity).toBe(SETTINGS_DEFAULTS.overlayOpacity);
+    expect(warn).toHaveBeenCalledWith('invalid stored settings value replaced by its default', {
+      field: 'overlayOpacity',
+    });
+  });
+
+  it('treats a non-0/1 exemption column as invalid instead of coercing it', () => {
+    const warn = vi.fn();
+    const port = openPort();
+    const repository = createSettingsRepository(port, { ...silentLogger, warn });
+    repository.updateSettings({ overlayScoreboardExempt: true, overlayOpacity: 0.3 });
+    // 7 is truthy — silent coercion would keep the exemption on.
+    port.drizzle.run(sql`update settings set overlay_scoreboard_exempt = 7`);
+
+    const settings = repository.getSettings();
+
+    expect(settings.overlayScoreboardExempt).toBe(SETTINGS_DEFAULTS.overlayScoreboardExempt);
+    expect(settings.overlayOpacity).toBe(0.3);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('invalid stored settings value replaced by its default', {
+      field: 'overlayScoreboardExempt',
+    });
+  });
+
+  it('rejects an out-of-range opacity update with TypeError and persists nothing', () => {
+    const repository = createSettingsRepository(openPort(), silentLogger);
+
+    expect(() => repository.updateSettings({ overlayOpacity: 1.5 })).toThrow(TypeError);
+    expect(repository.getSettings().overlayOpacity).toBe(SETTINGS_DEFAULTS.overlayOpacity);
+  });
+});
+
+describe('pre-overlay database upgrade (migration 0004)', () => {
+  it('adds the three settings columns with real defaults — existing values kept, no warnings', () => {
+    const warn = vi.fn();
+    const connection = new Database(':memory:');
+    connections.push(connection);
+    const files = readdirSync(MIGRATIONS_DIRECTORY)
+      .filter((name) => name.endsWith('.sql'))
+      .sort();
+    const preOverlay = files.filter((name) => !name.startsWith('0004'));
+    expect(preOverlay.length).toBe(files.length - 1);
+    for (const file of preOverlay) {
+      connection.exec(readFileSync(join(MIGRATIONS_DIRECTORY, file), 'utf8'));
+    }
+    // A settled v0.1 row written before the overlay columns existed.
+    connection
+      .prepare(
+        `insert into settings (id, theme, cs2_path, gsi_port, autostart, close_to_tray, auto_update)
+         values (1, 'light', 'C:\\Games\\CS2', 42731, 1, 0, 1)`,
+      )
+      .run();
+
+    for (const file of files.filter((name) => name.startsWith('0004'))) {
+      connection.exec(readFileSync(join(MIGRATIONS_DIRECTORY, file), 'utf8'));
+    }
+    const typedAccess = drizzle(connection);
+    const repository = createSettingsRepository(
+      {
+        drizzle: typedAccess,
+        withTransaction: (fn) => connection.transaction(() => fn(typedAccess))(),
+      },
+      { ...silentLogger, warn },
+    );
+
+    expect(repository.getSettings()).toEqual({
+      ...SETTINGS_DEFAULTS,
+      theme: 'light',
+      cs2Path: 'C:\\Games\\CS2',
+      gsiPort: 42731,
+      autostart: true,
+      closeToTray: false,
+    });
+    expect(warn).not.toHaveBeenCalled();
+  });
+});
+
 describe('v1.0 database upgrade (migration 0003)', () => {
   it('adds the three columns with real defaults — existing values kept, no warnings', () => {
     const warn = vi.fn();

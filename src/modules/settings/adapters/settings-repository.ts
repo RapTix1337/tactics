@@ -138,5 +138,8 @@ function encodeStoredSettings(settings: Settings): Omit<typeof settingsTable.$in
     scoreboardEnabled: settings.scoreboardEnabled ? 1 : 0,
     scoreboardLayout: JSON.stringify(settings.scoreboardLayout),
     gsiTiming: settings.gsiTiming,
+    overlayOpacity: settings.overlayOpacity,
+    overlayMapExempt: settings.overlayMapExempt ? 1 : 0,
+    overlayScoreboardExempt: settings.overlayScoreboardExempt ? 1 : 0,
   };
 }

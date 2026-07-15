@@ -123,6 +123,7 @@ function createHarness(
       gsiToken: TOKEN,
       effectiveGsiPort: overrides.effectiveGsiPort ?? null,
       windowBounds: null,
+      overlayBounds: null,
     },
   };
   const persistEffectivePort = vi.fn((port: number) => {

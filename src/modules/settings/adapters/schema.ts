@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 /**
  * Single-row settings table (ADR-029, 03-technical-design.md §7.2): typed
@@ -31,6 +31,9 @@ export const settingsTable = sqliteTable('settings', {
   scoreboardEnabled: integer('scoreboard_enabled').notNull().default(1),
   scoreboardLayout: text('scoreboard_layout').notNull().default(SCOREBOARD_LAYOUT_COLUMN_DEFAULT),
   gsiTiming: text('gsi_timing').notNull().default('default'),
+  overlayOpacity: real('overlay_opacity').notNull().default(1),
+  overlayMapExempt: integer('overlay_map_exempt').notNull().default(0),
+  overlayScoreboardExempt: integer('overlay_scoreboard_exempt').notNull().default(0),
 });
 
 /**
@@ -49,4 +52,8 @@ export const operationalStateTable = sqliteTable('operational_state', {
   windowWidth: integer('window_width'),
   windowHeight: integer('window_height'),
   windowMaximized: integer('window_maximized'),
+  // One JSON text column, not a second five-column group (OVL.2, ADR-058):
+  // the overlay bounds are read/written only as a whole, and invalid JSON
+  // degrades to null via the tolerant parse — no per-column repair needed.
+  overlayBounds: text('overlay_bounds'),
 });

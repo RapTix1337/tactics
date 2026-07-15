@@ -218,6 +218,104 @@ describe('updateOperationalState', () => {
   });
 });
 
+describe('overlay bounds (OVL.2, ADR-058)', () => {
+  it('round-trips the overlay bounds across close and reopen', () => {
+    const databasePath = newDatabasePath();
+    const overlayBounds = { x: -100, y: 40, width: 960, height: 540, maximized: false } as const;
+    const first = createOperationalStateRepository(openPort(databasePath), silentLogger);
+    first.updateOperationalState({ overlayBounds });
+    for (const connection of connections.splice(0)) {
+      connection.close();
+    }
+
+    const second = createOperationalStateRepository(openPort(databasePath), silentLogger);
+
+    expect(second.getOperationalState().overlayBounds).toEqual(overlayBounds);
+  });
+
+  it('keeps the overlay bounds independent of the window bounds', () => {
+    const repository = createOperationalStateRepository(openPort(), silentLogger);
+    const windowBounds = { x: 0, y: 0, width: 1280, height: 720, maximized: true };
+    const overlayBounds = { x: 500, y: 300, width: 480, height: 320, maximized: false } as const;
+
+    repository.updateOperationalState({ windowBounds });
+    repository.updateOperationalState({ overlayBounds });
+
+    const state = repository.getOperationalState();
+    expect(state.windowBounds).toEqual(windowBounds);
+    expect(state.overlayBounds).toEqual(overlayBounds);
+  });
+
+  it('clears the overlay bounds with an explicit null', () => {
+    const repository = createOperationalStateRepository(openPort(), silentLogger);
+    repository.updateOperationalState({
+      overlayBounds: { x: 0, y: 0, width: 960, height: 540, maximized: false },
+    });
+
+    const updated = repository.updateOperationalState({ overlayBounds: null });
+
+    expect(updated.overlayBounds).toBeNull();
+    expect(repository.getOperationalState().overlayBounds).toBeNull();
+  });
+
+  it('falls back to null on unparseable overlay-bounds JSON, keeping the other fields (logged)', () => {
+    const warn = vi.fn();
+    const port = openPort();
+    const repository = createOperationalStateRepository(port, { ...silentLogger, warn });
+    const windowBounds = { x: 10, y: 20, width: 1280, height: 720, maximized: false };
+    const token = repository.updateOperationalState({
+      effectiveGsiPort: 42731,
+      windowBounds,
+      overlayBounds: { x: 0, y: 0, width: 960, height: 540, maximized: false },
+    }).gsiToken;
+    port.drizzle.run(sql`update operational_state set overlay_bounds = '{"x": broken'`);
+
+    const state = repository.getOperationalState();
+
+    expect(state.overlayBounds).toBeNull();
+    expect(state.gsiToken).toBe(token);
+    expect(state.effectiveGsiPort).toBe(42731);
+    expect(state.windowBounds).toEqual(windowBounds);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      'invalid stored operational-state value replaced by its default',
+      { field: 'overlayBounds' },
+    );
+  });
+
+  it('falls back to null on parseable JSON with an invalid shape (maximized overlay)', () => {
+    const warn = vi.fn();
+    const port = openPort();
+    const repository = createOperationalStateRepository(port, { ...silentLogger, warn });
+    repository.updateOperationalState({
+      overlayBounds: { x: 0, y: 0, width: 960, height: 540, maximized: false },
+    });
+    // Parses as JSON, but the overlay is never maximizable — corruption.
+    port.drizzle.run(
+      sql`update operational_state set overlay_bounds = '{"x":0,"y":0,"width":960,"height":540,"maximized":true}'`,
+    );
+
+    expect(repository.getOperationalState().overlayBounds).toBeNull();
+    expect(warn).toHaveBeenCalledWith(
+      'invalid stored operational-state value replaced by its default',
+      { field: 'overlayBounds' },
+    );
+  });
+
+  it('rejects a maximized overlay-bounds update with TypeError and persists nothing', () => {
+    const repository = createOperationalStateRepository(openPort(), silentLogger);
+
+    expect(() =>
+      repository.updateOperationalState({
+        // Type-valid (WindowBounds allows any boolean) — the runtime schema
+        // is what pins the overlay's maximized to false.
+        overlayBounds: { x: 0, y: 0, width: 960, height: 540, maximized: true },
+      }),
+    ).toThrow(TypeError);
+    expect(repository.getOperationalState().overlayBounds).toBeNull();
+  });
+});
+
 describe('tolerant reads of a corrupted row', () => {
   it('falls back per field: a bad port keeps token and bounds', () => {
     const warn = vi.fn();

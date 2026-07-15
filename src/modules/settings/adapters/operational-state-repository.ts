@@ -81,6 +81,7 @@ function readOrRepair(database: BetterSQLite3Database, logger: Logger): Operatio
       gsiToken: generateGsiToken(),
       effectiveGsiPort: null,
       windowBounds: null,
+      overlayBounds: null,
     };
     persist(database, state);
     return state;
@@ -118,7 +119,10 @@ type StoredRow = typeof operationalStateTable.$inferSelect;
  * `windowBounds` group. All-null means "not captured" (a valid `null`);
  * anything else is handed to the tolerant parse as one candidate object, so
  * a partially set or corrupt group falls back as a whole. `window_maximized`
- * decodes only the exact 0/1 literals — no silent coercion.
+ * decodes only the exact 0/1 literals — no silent coercion. The overlay
+ * bounds are one JSON text column (OVL.2): only parseable JSON decodes;
+ * anything else stays as-is so the tolerant parse falls back to `null` with
+ * a warning instead of silently coercing.
  */
 function decodeStoredRow(row: StoredRow): Record<string, unknown> {
   const { windowX, windowY, windowWidth, windowHeight, windowMaximized, ...rest } = row;
@@ -133,7 +137,16 @@ function decodeStoredRow(row: StoredRow): Record<string, unknown> {
         maximized:
           windowMaximized === 0 || windowMaximized === 1 ? windowMaximized === 1 : windowMaximized,
       };
-  return { ...rest, windowBounds };
+  const decoded: Record<string, unknown> = { ...rest, windowBounds };
+  if (typeof decoded.overlayBounds === 'string') {
+    try {
+      decoded.overlayBounds = JSON.parse(decoded.overlayBounds);
+    } catch {
+      // Unparseable JSON stays a string — the schema rejects it, falling
+      // back to null (defaults on the next overlay open) with a warning.
+    }
+  }
+  return decoded;
 }
 
 function encodeStoredState(
@@ -147,5 +160,6 @@ function encodeStoredState(
     windowWidth: state.windowBounds?.width ?? null,
     windowHeight: state.windowBounds?.height ?? null,
     windowMaximized: state.windowBounds === null ? null : state.windowBounds.maximized ? 1 : 0,
+    overlayBounds: state.overlayBounds === null ? null : JSON.stringify(state.overlayBounds),
   };
 }
