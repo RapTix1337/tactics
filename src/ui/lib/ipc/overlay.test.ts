@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { TacticsBridge } from '../../../shared/bridge';
-import { closeOverlay } from './overlay';
+import { closeOverlay, resizeOverlay } from './overlay';
 
 function installBridge(invoke: ReturnType<typeof vi.fn>): void {
   const bridge = {
     invoke,
     subscribe: (): never => {
-      throw new Error('closeOverlay never subscribes');
+      throw new Error('the overlay command wrappers never subscribe');
     },
   } as unknown as TacticsBridge;
   Object.defineProperty(window, 'tactics', { value: bridge, configurable: true });
@@ -43,5 +43,28 @@ describe('closeOverlay', () => {
     installBridge(vi.fn().mockResolvedValue(failed));
 
     await expect(closeOverlay()).resolves.toEqual(failed);
+  });
+});
+
+describe('resizeOverlay', () => {
+  it('invokes overlay.resize with the request and passes the acknowledgement through', async () => {
+    const invoke = vi.fn().mockResolvedValue({ ok: true, data: undefined });
+    installBridge(invoke);
+
+    const request = { edge: 'bottom-right', pointerX: 1280.5, pointerY: 720.25 } as const;
+    await expect(resizeOverlay(request)).resolves.toEqual({ ok: true, data: undefined });
+    expect(invoke).toHaveBeenCalledWith('overlay.resize', request);
+  });
+
+  it('passes failed envelopes through untouched', async () => {
+    const failed = {
+      ok: false,
+      error: { code: 'INTERNAL', message: 'Overlay resize failed.' },
+    };
+    installBridge(vi.fn().mockResolvedValue(failed));
+
+    await expect(resizeOverlay({ edge: 'left', pointerX: 0, pointerY: 0 })).resolves.toEqual(
+      failed,
+    );
   });
 });

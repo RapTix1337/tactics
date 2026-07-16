@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { success } from '../../../shared/envelope';
 import type { GameState } from '../../../shared/game-state';
 import type { MapSummary } from '../../../shared/map-catalog';
+import { OVERLAY_RESIZE_EDGES } from '../../../shared/overlay-state';
 import type { Settings } from '../../../shared/settings';
 import { loadMapList } from '../../lib/ipc/map-catalog';
 import { useGameStateStore } from '../../stores/game-state-store';
@@ -14,7 +15,7 @@ import { useSettingsStore } from '../../stores/settings-store';
 import { SAMPLE_SCOREBOARD_LAYOUT, SAMPLE_SCOREBOARD_STATE } from '../scoreboard/sample-state';
 import { OverlayRoot } from './OverlayRoot';
 
-vi.mock('../../lib/ipc/overlay', () => ({ closeOverlay: vi.fn() }));
+vi.mock('../../lib/ipc/overlay', () => ({ closeOverlay: vi.fn(), resizeOverlay: vi.fn() }));
 vi.mock('../../lib/ipc/map-catalog', () => ({ loadMapList: vi.fn() }));
 vi.mock('../../features/map-view/MapView', () => ({
   MapView: ({ mapId }: { mapId: string }): JSX.Element => (
@@ -177,6 +178,16 @@ describe('OverlayRoot', () => {
       });
 
       expect(fadeVariables()).toEqual({ base: '0.8', map: '1', scoreboard: '0.8' });
+    });
+  });
+
+  describe('resize handles (spec AC 6)', () => {
+    it('mounts all 8 handles alongside chrome and content', () => {
+      render(<OverlayRoot />);
+
+      for (const edge of OVERLAY_RESIZE_EDGES) {
+        expect(screen.getByTestId(`resize-handle-${edge}`)).toBeInTheDocument();
+      }
     });
   });
 

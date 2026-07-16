@@ -1,14 +1,23 @@
 import type { CommandResult } from '../../../shared/envelope';
-import type { OverlayState } from '../../../shared/overlay-state';
+import type { OverlayResizeRequest, OverlayState } from '../../../shared/overlay-state';
 import { invokeCommand } from './invoke';
 
 /**
  * Closes the overlay window via `overlay.close` (live-overlay 02-design.md
  * §3.1, OVL.7) — the chrome's ✕ control. Idempotent on main; the mirror
  * follows through `evt:overlay.changed`, so the response exists for error
- * handling only. The open/resize wrappers arrive with their consumers
- * (OVL.9/OVL.8).
+ * handling only. The open wrapper arrives with its consumer (OVL.9).
  */
 export async function closeOverlay(): Promise<CommandResult<OverlayState>> {
   return invokeCommand((bridge) => bridge.invoke('overlay.close', undefined));
+}
+
+/**
+ * Reports a resize-drag frame via `overlay.resize` (live-overlay 02-design.md
+ * §3.1, OVL.8): the dragged edge plus the pointer in screen coordinates —
+ * main computes, clamps, and applies the bounds; the response only
+ * acknowledges (a frame racing the window's close is a no-op success).
+ */
+export async function resizeOverlay(request: OverlayResizeRequest): Promise<CommandResult<void>> {
+  return invokeCommand((bridge) => bridge.invoke('overlay.resize', request));
 }

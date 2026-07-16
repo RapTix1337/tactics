@@ -6,6 +6,7 @@ import { useSettingsStore } from '../../stores/settings-store';
 import { LiveContent } from '../live-content/LiveContent';
 import { OverlayChrome } from './OverlayChrome';
 import { OverlayFrame } from './OverlayFrame';
+import { ResizeHandles } from './ResizeHandles';
 
 /**
  * React's CSSProperties has no index for custom properties — the three fade
@@ -45,6 +46,9 @@ export function OverlayRoot(): JSX.Element {
 
   return (
     <div data-testid="overlay-root" className="flex h-screen flex-col gap-2 p-2" style={fadeStyle}>
+      {/* Outside every fade region: invisible interaction surfaces that must
+          keep working at 0 % opacity (design §6 case 5). */}
+      <ResizeHandles />
       <OverlayChrome />
       <main
         data-testid="overlay-content"
