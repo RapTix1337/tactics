@@ -58,6 +58,7 @@ import { createGsiWiring } from '../wiring/gsi-wiring';
 import { createScoreboardWiring } from '../wiring/scoreboard-wiring';
 import type { LoginItemsPort } from './autostart';
 import { syncAutostart } from './autostart';
+import { applyOverlayCompositionSwitches } from './chromium-switches';
 import {
   resolveGsiPortOverride,
   resolveUpdatesDisabled,
@@ -78,6 +79,10 @@ import { createWindowBoundsTracker, planBoundsRestore } from './window-bounds';
  * and autostart.
  */
 export function startApp(): void {
+  // Before app ready — Chromium reads the feature list at startup
+  // (chromium-switches.ts: the overlay above a borderless CS2).
+  applyOverlayCompositionSwitches(app.commandLine);
+
   // Must precede the single-instance lock: the lock is keyed on the
   // user-data directory, so an overridden test instance never collides
   // with a regular installation.
@@ -329,6 +334,13 @@ export function startApp(): void {
             restoredBounds,
           ),
         );
+        // Screen-saver z-level (2026-07-16 field fix, spec AC 2): at the
+        // default floating level the transparent overlay stops being
+        // presented above a focused borderless CS2 (electron#10078/#8530
+        // symptom family); the escalation is what made it survive focus
+        // changes in the field test. No constructor option exists for the
+        // level, so it is set right after creation (02-design.md §2.1).
+        overlayWindow.setAlwaysOnTop(true, 'screen-saver');
         overlayWindow.once('ready-to-show', () => {
           overlayWindow.show();
         });
@@ -341,6 +353,7 @@ export function startApp(): void {
         }
         return {
           focus: () => overlayWindow.focus(),
+          moveTop: () => overlayWindow.moveTop(),
           close: () => overlayWindow.close(),
           getBounds: () => overlayWindow.getBounds(),
           setBounds: (bounds) => {

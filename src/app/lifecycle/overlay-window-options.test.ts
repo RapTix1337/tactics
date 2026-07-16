@@ -20,9 +20,11 @@ describe('buildOverlayWindowOptions', () => {
     expect(options.frame).toBe(false);
   });
 
-  it('floats always-on-top at the default level (no screen-saver escalation)', () => {
+  // The screen-saver level escalation lives in the window factory
+  // (app-lifecycle.ts): BrowserWindowConstructorOptions cannot express a
+  // z-level, only the flag (2026-07-16 field fix, spec AC 2).
+  it('requests always-on-top at construction', () => {
     expect(options.alwaysOnTop).toBe(true);
-    expect(options).not.toHaveProperty('alwaysOnTopLevel');
   });
 
   it('disables native resize/maximize/minimize (resize is ours, §3.1)', () => {
@@ -43,8 +45,18 @@ describe('buildOverlayWindowOptions', () => {
       sandbox: true,
       nodeIntegration: false,
       webviewTag: false,
-      backgroundThrottling: true,
     });
+  });
+
+  // Regression (2026-07-16): with throttling on, Chromium's Windows occlusion
+  // tracker marks every window occluded while a fullscreen-sized foreground
+  // window (borderless CS2) is active — topmost or not — and the paused
+  // renderer paints nothing on a transparent window: invisible overlay whose
+  // HWND still steals the mouse. backgroundThrottling: false keeps the
+  // visibility state 'visible' even when marked occluded (Electron docs), so
+  // the overlay keeps painting above the game (spec AC 2).
+  it('disables background throttling so the fullscreen-occlusion heuristic cannot blank the overlay', () => {
+    expect(options.webPreferences?.backgroundThrottling).toBe(false);
   });
 
   it('opens hidden at the 960×540 default, OS-centered (no x/y)', () => {

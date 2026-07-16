@@ -8,7 +8,9 @@ export const OVERLAY_DEFAULT_HEIGHT = 540;
 
 /**
  * Overlay-window construction options (ADR-057): transparent, frameless,
- * always-on-top at the default floating level. Native resize/maximize/minimize
+ * always-on-top (escalated to the screen-saver level post-creation in the
+ * window factory — constructor options cannot express a z-level).
+ * Native resize/maximize/minimize
  * are disabled — Windows strips WS_THICKFRAME from transparent windows, so
  * resizing is the overlay's own handles plus `computeResizedBounds`. The
  * taskbar entry and title stay for recovery/alt-tab reachability. Pure builder
@@ -44,9 +46,13 @@ export function buildOverlayWindowOptions(
       sandbox: true,
       nodeIntegration: false,
       webviewTag: false,
-      // An always-on-top visible window is never occluded; revisit only if
-      // live updates demonstrably stall (02-design.md §2.1).
-      backgroundThrottling: true,
+      // Chromium's Windows occlusion tracker marks every window occluded
+      // while a fullscreen-sized foreground window (borderless CS2) is
+      // active — topmost or not — and a throttled renderer paints nothing
+      // on a transparent window. Disabled keeps the visibility state
+      // 'visible' under that heuristic, so the overlay keeps painting
+      // above the game (spec AC 2, 02-design.md §2.1).
+      backgroundThrottling: false,
     },
   };
 }
