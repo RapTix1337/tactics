@@ -18,21 +18,9 @@ import { createWindowBoundsTracker, planBoundsRestore } from './window-bounds';
 /** The window events the manager wires; a real BrowserWindow emits all four. */
 export type OverlayWindowEvent = 'move' | 'resize' | 'close' | 'closed';
 
-/**
- * Topmost re-assertion cadence (2026-07-16 regression, spec AC 2): a focused
- * borderless CS2 also enters the topmost band and raises above the overlay —
- * a one-shot `alwaysOnTop` loses the band fight (the WS_EX_TOPMOST bit was
- * verified present). Re-raising on this interval is the non-injecting
- * equivalent of PowerToys' event-hook re-pinning; worst case the overlay
- * dips behind the game for one tick after the game raises itself.
- */
-export const OVERLAY_TOPMOST_REASSERT_MS = 500;
-
 /** The slice of BrowserWindow the manager needs; fakes implement it in tests. */
 export interface OverlayWindowPort extends BoundsWindowPort {
   readonly focus: () => void;
-  /** Raises within the topmost band without stealing focus (BrowserWindow.moveTop). */
-  readonly moveTop: () => void;
   readonly close: () => void;
   readonly getBounds: () => Rectangle;
   readonly setBounds: (bounds: Rectangle) => void;
@@ -78,7 +66,6 @@ export interface OverlayWindowManager {
 
 export function createOverlayWindowManager(deps: OverlayWindowManagerDeps): OverlayWindowManager {
   let window: OverlayWindowPort | null = null;
-  let topmostGuard: ReturnType<typeof setInterval> | undefined;
   const listeners = new Set<(state: OverlayState) => void>();
 
   const notify = (): void => {
@@ -114,14 +101,9 @@ export function createOverlayWindowManager(deps: OverlayWindowManagerDeps): Over
       // and lands in storage before will-quit closes the database.
       created.on('close', tracker.flush);
       created.on('closed', () => {
-        clearInterval(topmostGuard);
-        topmostGuard = undefined;
         window = null;
         notify();
       });
-      topmostGuard = setInterval(() => {
-        window?.moveTop();
-      }, OVERLAY_TOPMOST_REASSERT_MS);
       notify();
     },
     close,

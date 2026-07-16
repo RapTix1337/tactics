@@ -334,13 +334,14 @@ export function startApp(): void {
             restoredBounds,
           ),
         );
-        // Screen-saver z-level (2026-07-16 field fix, spec AC 2): at the
-        // default floating level the transparent overlay stops being
-        // presented above a focused borderless CS2 (electron#10078/#8530
-        // symptom family); the escalation is what made it survive focus
-        // changes in the field test. No constructor option exists for the
-        // level, so it is set right after creation (02-design.md §2.1).
-        overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+        // pop-up-menu z-level (ADR-059, spec AC 2): at the default floating
+        // level the transparent overlay stops being presented above a
+        // focused borderless CS2; this is the lowest band that survives the
+        // field torture test. No constructor option exists for the level, so
+        // it is set right after creation. Every elevated band boots CS2 out
+        // of EXCLUSIVE fullscreen while the overlay is open — unsupported by
+        // design (ADR-059; OVL.11 adds the warn-on-open).
+        overlayWindow.setAlwaysOnTop(true, 'pop-up-menu');
         overlayWindow.once('ready-to-show', () => {
           overlayWindow.show();
         });
@@ -353,7 +354,6 @@ export function startApp(): void {
         }
         return {
           focus: () => overlayWindow.focus(),
-          moveTop: () => overlayWindow.moveTop(),
           close: () => overlayWindow.close(),
           getBounds: () => overlayWindow.getBounds(),
           setBounds: (bounds) => {

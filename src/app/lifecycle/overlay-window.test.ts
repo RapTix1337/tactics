@@ -5,7 +5,7 @@ import type { WindowBounds } from '../../modules/settings';
 import type { Logger, OverlayState } from '../../shared';
 import { OVERLAY_MIN_HEIGHT, OVERLAY_MIN_WIDTH } from './overlay-resize';
 import type { OverlayWindowManager, OverlayWindowPort } from './overlay-window';
-import { createOverlayWindowManager, OVERLAY_TOPMOST_REASSERT_MS } from './overlay-window';
+import { createOverlayWindowManager } from './overlay-window';
 import { BOUNDS_SAVE_DEBOUNCE_MS } from './window-bounds';
 
 const WORK_AREA: Rectangle = { x: 0, y: 0, width: 2560, height: 1400 };
@@ -14,7 +14,6 @@ const INITIAL_BOUNDS: Rectangle = { x: 100, y: 100, width: 960, height: 540 };
 interface FakeWindow {
   readonly port: OverlayWindowPort;
   readonly focus: ReturnType<typeof vi.fn>;
-  readonly moveTop: ReturnType<typeof vi.fn>;
   readonly setBounds: ReturnType<typeof vi.fn>;
   /** Simulates a native close (window ✕ / Alt+F4): close → destroy → closed. */
   readonly emitNativeClose: () => void;
@@ -38,14 +37,12 @@ function createFakeWindow(initialBounds: Rectangle = INITIAL_BOUNDS): FakeWindow
   };
 
   const focus = vi.fn();
-  const moveTop = vi.fn();
   const setBounds = vi.fn((next: Rectangle) => {
     bounds = { ...next };
   });
 
   const port: OverlayWindowPort = {
     focus,
-    moveTop,
     // The real BrowserWindow.close() runs the same sequence as a native ✕.
     close: () => emitNativeClose(),
     getBounds: () => ({ ...bounds }),
@@ -59,7 +56,7 @@ function createFakeWindow(initialBounds: Rectangle = INITIAL_BOUNDS): FakeWindow
     },
   };
 
-  return { port, focus, moveTop, setBounds, emitNativeClose, emit };
+  return { port, focus, setBounds, emitNativeClose, emit };
 }
 
 function createLoggerFake(): Logger {
@@ -265,55 +262,6 @@ describe('createOverlayWindowManager — resize', () => {
     const { manager } = createHarness();
 
     expect(() => manager.resize('left', 10, 10)).not.toThrow();
-  });
-});
-
-// Regression (2026-07-16): a focused borderless CS2 also enters the topmost
-// band and raises above the overlay — a one-shot alwaysOnTop set at creation
-// loses the band fight (the WS_EX_TOPMOST bit was verified present). The
-// manager re-raises the open overlay on an interval, the same effect as
-// PowerToys' event-hook re-pinning (spec AC 2).
-describe('createOverlayWindowManager — topmost re-assertion', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('re-raises the open overlay once per interval', () => {
-    const { manager, windows } = createHarness();
-    manager.open();
-
-    vi.advanceTimersByTime(OVERLAY_TOPMOST_REASSERT_MS);
-    expect(windows[0]?.moveTop).toHaveBeenCalledTimes(1);
-
-    vi.advanceTimersByTime(OVERLAY_TOPMOST_REASSERT_MS * 3);
-    expect(windows[0]?.moveTop).toHaveBeenCalledTimes(4);
-  });
-
-  it('stops re-raising after the window closes (either path)', () => {
-    const { manager, windows } = createHarness();
-    manager.open();
-    vi.advanceTimersByTime(OVERLAY_TOPMOST_REASSERT_MS);
-
-    windows[0]?.emitNativeClose();
-    vi.advanceTimersByTime(OVERLAY_TOPMOST_REASSERT_MS * 5);
-
-    expect(windows[0]?.moveTop).toHaveBeenCalledTimes(1);
-  });
-
-  it('re-assertion resumes with a fresh window after reopen', () => {
-    const { manager, windows } = createHarness();
-    manager.open();
-    manager.close();
-    manager.open();
-
-    vi.advanceTimersByTime(OVERLAY_TOPMOST_REASSERT_MS);
-
-    expect(windows[0]?.moveTop).not.toHaveBeenCalled();
-    expect(windows[1]?.moveTop).toHaveBeenCalledTimes(1);
   });
 });
 
