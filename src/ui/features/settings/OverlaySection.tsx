@@ -8,7 +8,8 @@ import { OverlayControls } from '../overlay-controls/OverlayControls';
  * mounts the same `OverlayControls` as the live-page placeholder — one
  * component, two mounts, no drift (maintainer decision: both surfaces).
  * The Fullscreen Windowed hint reflects ADR-059 (exclusive fullscreen
- * unsupported); OVL.11 adds the active warn-on-open.
+ * unsupported); the active warn-on-open lives in the live-page toggle
+ * (`OverlayOpenConfirmDialog`, OVL.11).
  */
 export function OverlaySection(): JSX.Element {
   const settingsLoaded = useSettingsStore((state) => state.settings !== undefined);

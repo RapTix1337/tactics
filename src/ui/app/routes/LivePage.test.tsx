@@ -356,12 +356,13 @@ describe('LivePage', () => {
       expect(await screen.findByRole('switch', { name: 'Overlay' })).not.toBeChecked();
     });
 
-    it('dispatches overlay.open from the header toggle (spec AC 1)', async () => {
+    it('dispatches overlay.open from the header toggle via the confirmation (spec AC 1, OVL.11)', async () => {
       useOverlayStore.setState({ overlay: { open: false } });
       const user = userEvent.setup();
       renderLivePage();
 
       await user.click(await screen.findByRole('switch', { name: 'Overlay' }));
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
 
       expect(openOverlay).toHaveBeenCalledTimes(1);
     });
