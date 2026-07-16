@@ -3,10 +3,20 @@ import type { OverlayResizeRequest, OverlayState } from '../../../shared/overlay
 import { invokeCommand } from './invoke';
 
 /**
+ * Opens the overlay window (or focuses the existing one) via `overlay.open`
+ * (live-overlay 02-design.md §3.1, OVL.9) — the live page's toggle.
+ * Idempotent on main; the mirror follows through `evt:overlay.changed`, so
+ * the response exists for error handling only.
+ */
+export async function openOverlay(): Promise<CommandResult<OverlayState>> {
+  return invokeCommand((bridge) => bridge.invoke('overlay.open', undefined));
+}
+
+/**
  * Closes the overlay window via `overlay.close` (live-overlay 02-design.md
  * §3.1, OVL.7) — the chrome's ✕ control. Idempotent on main; the mirror
  * follows through `evt:overlay.changed`, so the response exists for error
- * handling only. The open wrapper arrives with its consumer (OVL.9).
+ * handling only.
  */
 export async function closeOverlay(): Promise<CommandResult<OverlayState>> {
   return invokeCommand((bridge) => bridge.invoke('overlay.close', undefined));

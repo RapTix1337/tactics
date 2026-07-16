@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { TacticsBridge } from '../../../shared/bridge';
-import { closeOverlay, resizeOverlay } from './overlay';
+import { closeOverlay, openOverlay, resizeOverlay } from './overlay';
 
 function installBridge(invoke: ReturnType<typeof vi.fn>): void {
   const bridge = {
@@ -15,6 +15,26 @@ function installBridge(invoke: ReturnType<typeof vi.fn>): void {
 
 afterEach(() => {
   Reflect.deleteProperty(window, 'tactics');
+});
+
+describe('openOverlay', () => {
+  it('invokes overlay.open and passes the envelope through', async () => {
+    const invoke = vi.fn().mockResolvedValue({ ok: true, data: { open: true } });
+    installBridge(invoke);
+
+    await expect(openOverlay()).resolves.toEqual({ ok: true, data: { open: true } });
+    expect(invoke).toHaveBeenCalledWith('overlay.open', undefined);
+  });
+
+  it('passes failed envelopes through untouched', async () => {
+    const failed = {
+      ok: false,
+      error: { code: 'INTERNAL', message: 'Overlay open failed.' },
+    };
+    installBridge(vi.fn().mockResolvedValue(failed));
+
+    await expect(openOverlay()).resolves.toEqual(failed);
+  });
 });
 
 describe('closeOverlay', () => {

@@ -64,7 +64,7 @@ afterEach(() => {
 });
 
 describe('SettingsPage', () => {
-  it('renders all six settings sections (01-requirements.md §9)', async () => {
+  it('renders all settings sections (01-requirements.md §9)', async () => {
     render(<SettingsPage />);
 
     // E16.1: theme + the three toggles.
@@ -78,6 +78,10 @@ describe('SettingsPage', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Scoreboard builder' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add group' })).toBeInTheDocument();
+    // OVL.9: the overlay section with the shared controls.
+    expect(screen.getByRole('slider', { name: 'Overlay opacity' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Map always opaque' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Scoreboard always opaque' })).toBeInTheDocument();
     // E16.2: CS2 path and the advanced GSI port.
     expect(await screen.findByText(readyPlan.gameRoot)).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Set port manually' })).toBeInTheDocument();

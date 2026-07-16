@@ -1,5 +1,6 @@
 import { useAppStore } from '../../stores/app-store';
 import { useGameStateStore } from '../../stores/game-state-store';
+import { useOverlayStore } from '../../stores/overlay-store';
 import { useScoreboardStore } from '../../stores/scoreboard-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useUpdateStore } from '../../stores/update-store';
@@ -24,11 +25,15 @@ export const ipcWiring: IpcWiring = {
     bridge.subscribe('scoreboard', (scoreboard) => {
       useScoreboardStore.setState({ scoreboard });
     });
+    bridge.subscribe('overlay', (overlay) => {
+      useOverlayStore.setState({ overlay });
+    });
   },
   applySnapshot: (snapshot): void => {
     // Full slices, so the snapshot may overwrite an earlier event and a
     // later event wins again — both orders converge (04-data-flow.md §4).
     useGameStateStore.setState({ gameState: snapshot.gameState });
+    useOverlayStore.setState({ overlay: snapshot.overlay });
     useScoreboardStore.setState({ scoreboard: snapshot.scoreboard });
     useSettingsStore.setState({ settings: snapshot.settings });
     useUpdateStore.setState({ updateState: snapshot.updateState });

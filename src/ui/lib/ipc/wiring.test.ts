@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { GameState } from '../../../shared/game-state';
+import type { OverlayState } from '../../../shared/overlay-state';
 import type { ScoreboardState } from '../../../shared/scoreboard-state';
 import type { Settings } from '../../../shared/settings';
 import type { UpdateState } from '../../../shared/update-state';
 import { useAppStore } from '../../stores/app-store';
 import { useGameStateStore } from '../../stores/game-state-store';
+import { useOverlayStore } from '../../stores/overlay-store';
 import { useScoreboardStore } from '../../stores/scoreboard-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { useUpdateStore } from '../../stores/update-store';
@@ -34,10 +36,11 @@ const snapshotUpdateState: UpdateState = { status: 'idle', version: null, errorK
 
 const snapshotScoreboard: ScoreboardState = { active: false };
 
+const snapshotOverlay: OverlayState = { open: false };
+
 const snapshot: AppSnapshot = {
   gameState: snapshotGameState,
-  // Consumed by the OVL.9 overlay store; until then only the type needs it.
-  overlay: { open: false },
+  overlay: snapshotOverlay,
   scoreboard: snapshotScoreboard,
   settings: snapshotSettings,
   updateState: snapshotUpdateState,
@@ -87,6 +90,7 @@ function createFakeBridge(): {
   emitGameState: (gameState: GameState) => void;
   emitUpdateState: (updateState: UpdateState) => void;
   emitScoreboard: (scoreboard: ScoreboardState) => void;
+  emitOverlay: (overlay: OverlayState) => void;
   subscribedDomains: string[];
 } {
   const handlers = new Map<string, (payload: unknown) => void>();
@@ -116,6 +120,9 @@ function createFakeBridge(): {
     emitScoreboard: (scoreboard): void => {
       handlers.get('scoreboard')?.(scoreboard);
     },
+    emitOverlay: (overlay): void => {
+      handlers.get('overlay')?.(overlay);
+    },
   };
 }
 
@@ -123,6 +130,7 @@ describe('ipcWiring', () => {
   beforeEach(() => {
     useAppStore.setState({ ipcStatus: 'connecting', lastError: undefined });
     useGameStateStore.setState({ gameState: undefined });
+    useOverlayStore.setState({ overlay: undefined });
     useScoreboardStore.setState({ scoreboard: undefined });
     useSettingsStore.setState({ settings: undefined });
     useUpdateStore.setState({ updateState: undefined });
@@ -133,6 +141,7 @@ describe('ipcWiring', () => {
 
     expect(useAppStore.getState()).toEqual({ ipcStatus: 'ready', lastError: undefined });
     expect(useGameStateStore.getState().gameState).toEqual(snapshotGameState);
+    expect(useOverlayStore.getState().overlay).toEqual(snapshotOverlay);
     expect(useScoreboardStore.getState().scoreboard).toEqual(snapshotScoreboard);
     expect(useSettingsStore.getState().settings).toEqual(snapshotSettings);
     expect(useUpdateStore.getState().updateState).toEqual(snapshotUpdateState);
@@ -193,6 +202,17 @@ describe('ipcWiring', () => {
 
     emitScoreboard(eventScoreboard);
     expect(useScoreboardStore.getState().scoreboard).toEqual(eventScoreboard);
+    expect(useAppStore.getState().ipcStatus).toBe('connecting');
+  });
+
+  it('subscribes the overlay event and mirrors the full slice into the store', () => {
+    const { bridge, emitOverlay, subscribedDomains } = createFakeBridge();
+
+    ipcWiring.subscribeAll(bridge);
+    expect(subscribedDomains).toContain('overlay');
+
+    emitOverlay({ open: true });
+    expect(useOverlayStore.getState().overlay).toEqual({ open: true });
     expect(useAppStore.getState().ipcStatus).toBe('connecting');
   });
 
