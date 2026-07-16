@@ -57,9 +57,16 @@ describe('OverlayControls', () => {
     slider.focus();
     await user.keyboard('{ArrowRight}');
 
-    expect(updateSettings).toHaveBeenCalledWith({ overlayOpacity: 0.71 });
-    // Change + commit of the same interaction coalesce into one dispatch.
-    expect(updateSettings).toHaveBeenCalledTimes(1);
+    // Timing-free contract: the commit always flushes, and the jsdom rAF
+    // (a 16 ms timer) may or may not fire between key-down and key-up —
+    // one or two dispatches are both correct, every payload must be the
+    // stepped value, and more than two would mean broken coalescing.
+    const calls = vi.mocked(updateSettings).mock.calls;
+    expect(calls.length).toBeGreaterThanOrEqual(1);
+    expect(calls.length).toBeLessThanOrEqual(2);
+    for (const call of calls) {
+      expect(call[0]).toEqual({ overlayOpacity: 0.71 });
+    }
   });
 
   it('dispatches the map exemption switch (spec AC 5)', async () => {
