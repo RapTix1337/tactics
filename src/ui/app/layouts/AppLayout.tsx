@@ -1,6 +1,6 @@
 import type { JSX, ReactNode } from 'react';
 
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '../../components/ui/sidebar';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 
 interface AppLayoutProps {
   readonly sidebar: ReactNode;

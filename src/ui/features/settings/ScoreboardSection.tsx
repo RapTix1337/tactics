@@ -1,11 +1,12 @@
 import type { JSX } from 'react';
 import { useEffect, useId, useState } from 'react';
 
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { updateSettings } from '@/lib/ipc/settings';
+import { useSettingsStore } from '@/stores/settings-store';
+
 import type { ScoreboardLayout, Settings } from '../../../shared/settings';
-import { Label } from '../../components/ui/label';
-import { Switch } from '../../components/ui/switch';
-import { updateSettings } from '../../lib/ipc/settings';
-import { useSettingsStore } from '../../stores/settings-store';
 import { MyPerformanceCard } from '../scoreboard/MyPerformanceCard';
 import { SAMPLE_SCOREBOARD_STATE } from '../scoreboard/sample-state';
 import type { DraftLayout } from './scoreboard-builder-model';

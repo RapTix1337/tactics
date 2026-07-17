@@ -1,14 +1,14 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 
-import { GsiSetupDialog } from '../../features/gsi-status/GsiSetupDialog';
-import { Cs2PathSection } from '../../features/settings/Cs2PathSection';
-import { GsiPortSection } from '../../features/settings/GsiPortSection';
-import { GsiTimingSection } from '../../features/settings/GsiTimingSection';
-import { OverlaySection } from '../../features/settings/OverlaySection';
-import { ScoreboardSection } from '../../features/settings/ScoreboardSection';
-import { SettingsForm } from '../../features/settings/SettingsForm';
-import { UpdateSection } from '../../features/settings/UpdateSection';
+import { GsiSetupDialog } from '@/features/gsi-status/GsiSetupDialog';
+import { Cs2PathSection } from '@/features/settings/Cs2PathSection';
+import { GsiPortSection } from '@/features/settings/GsiPortSection';
+import { GsiTimingSection } from '@/features/settings/GsiTimingSection';
+import { OverlaySection } from '@/features/settings/OverlaySection';
+import { ScoreboardSection } from '@/features/settings/ScoreboardSection';
+import { SettingsForm } from '@/features/settings/SettingsForm';
+import { UpdateSection } from '@/features/settings/UpdateSection';
 
 /**
  * `/settings` (06-ui.md §2): the six settings of 01-requirements.md §9 —

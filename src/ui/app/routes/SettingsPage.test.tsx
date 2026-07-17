@@ -2,13 +2,14 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { GsiSetupPlan } from '@/lib/ipc/gsi-setup';
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useSettingsStore } from '@/stores/settings-store';
+import { useUpdateStore } from '@/stores/update-store';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { CommandResult } from '../../../shared/envelope';
 import type { Settings } from '../../../shared/settings';
-import type { GsiSetupPlan } from '../../lib/ipc/gsi-setup';
-import { useGameStateStore } from '../../stores/game-state-store';
-import { useSettingsStore } from '../../stores/settings-store';
-import { useUpdateStore } from '../../stores/update-store';
 import { SettingsPage } from './SettingsPage';
 
 const storedSettings: Settings = {

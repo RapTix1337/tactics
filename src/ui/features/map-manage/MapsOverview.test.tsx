@@ -10,12 +10,13 @@ import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { openExternal } from '@/lib/ipc/external-links';
+import { createProfile, loadMapList } from '@/lib/ipc/map-catalog';
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+
 import { failure, success } from '../../../shared/envelope';
 import { RADAR_IMAGE_HELP_URL } from '../../../shared/external-urls';
 import type { MapSummary } from '../../../shared/map-catalog';
-import { openExternal } from '../../lib/ipc/external-links';
-import { createProfile, loadMapList } from '../../lib/ipc/map-catalog';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
 import { MapsOverview } from './MapsOverview';
 
 vi.mock('../../lib/ipc/external-links', () => ({ openExternal: vi.fn() }));

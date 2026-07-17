@@ -1,13 +1,14 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { checkForUpdates, installUpdate } from '@/lib/ipc/updates';
+import { useSettingsStore } from '@/stores/settings-store';
+import { useUpdateStore } from '@/stores/update-store';
+
 import { APP_NAME } from '../../../shared/constants';
 import type { CommandResult } from '../../../shared/envelope';
 import type { UpdateErrorKind, UpdateState } from '../../../shared/update-state';
-import { Button } from '../../components/ui/button';
-import { checkForUpdates, installUpdate } from '../../lib/ipc/updates';
-import { useSettingsStore } from '../../stores/settings-store';
-import { useUpdateStore } from '../../stores/update-store';
 
 /** The named failure classes (E18.1), worded for the section. */
 const ERROR_DESCRIPTIONS: Record<UpdateErrorKind, string> = {

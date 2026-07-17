@@ -4,7 +4,6 @@ import { ImageOffIcon } from 'lucide-react';
 import type { JSX, ReactNode } from 'react';
 import { useEffect } from 'react';
 
-import { APP_NAME } from '../../../shared/constants';
 import {
   Sidebar,
   SidebarContent,
@@ -16,10 +15,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '../../components/ui/sidebar';
-import { loadMapList } from '../../lib/ipc/map-catalog';
-import { useGameStateStore } from '../../stores/game-state-store';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
+} from '@/components/ui/sidebar';
+import { loadMapList } from '@/lib/ipc/map-catalog';
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+
+import { APP_NAME } from '../../../shared/constants';
 
 interface NavEntryProps {
   readonly label: string;

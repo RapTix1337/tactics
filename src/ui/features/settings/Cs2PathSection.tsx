@@ -1,10 +1,11 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import type { ReadyGsiSetupPlan } from '@/lib/ipc/gsi-setup';
+import { pickCs2Path } from '@/lib/ipc/gsi-setup';
+
 import type { CommandError } from '../../../shared/envelope';
-import { Button } from '../../components/ui/button';
-import type { ReadyGsiSetupPlan } from '../../lib/ipc/gsi-setup';
-import { pickCs2Path } from '../../lib/ipc/gsi-setup';
 import { useGsiSetupPlan } from './use-gsi-setup-plan';
 
 const SOURCE_LABELS: Record<ReadyGsiSetupPlan['source'], string> = {

@@ -3,11 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { GsiSetupPlan } from '@/lib/ipc/gsi-setup';
+import { useSettingsStore } from '@/stores/settings-store';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { CommandResult } from '../../../shared/envelope';
 import type { Settings } from '../../../shared/settings';
-import type { GsiSetupPlan } from '../../lib/ipc/gsi-setup';
-import { useSettingsStore } from '../../stores/settings-store';
 import { Cs2PathSection } from './Cs2PathSection';
 
 const storedSettings: Settings = {

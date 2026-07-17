@@ -10,21 +10,22 @@ import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SAMPLE_SCOREBOARD_STATE } from '@/features/scoreboard/sample-state';
+import { openExternal } from '@/lib/ipc/external-links';
+import { loadMapList } from '@/lib/ipc/map-catalog';
+import { updateSettings } from '@/lib/ipc/settings';
+import { useAppStore } from '@/stores/app-store';
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+import { useScoreboardStore } from '@/stores/scoreboard-store';
+import { useSettingsStore } from '@/stores/settings-store';
+
 import { failure, success } from '../../../shared/envelope';
 import { PROJECT_REPOSITORY_URL } from '../../../shared/external-urls';
 import type { MapSummary } from '../../../shared/map-catalog';
 import type { Settings } from '../../../shared/settings';
-import { SAMPLE_SCOREBOARD_STATE } from '../../features/scoreboard/sample-state';
-import { openExternal } from '../../lib/ipc/external-links';
-import { loadMapList } from '../../lib/ipc/map-catalog';
 import { closeOverlay, openOverlay } from '../../lib/ipc/overlay';
-import { updateSettings } from '../../lib/ipc/settings';
-import { useAppStore } from '../../stores/app-store';
-import { useGameStateStore } from '../../stores/game-state-store';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
 import { useOverlayStore } from '../../stores/overlay-store';
-import { useScoreboardStore } from '../../stores/scoreboard-store';
-import { useSettingsStore } from '../../stores/settings-store';
 import { LivePage } from './LivePage';
 
 vi.mock('../../lib/ipc/external-links', () => ({ openExternal: vi.fn() }));

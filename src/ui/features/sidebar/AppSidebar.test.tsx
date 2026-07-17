@@ -10,13 +10,14 @@ import userEvent from '@testing-library/user-event';
 import type { JSX, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { loadMapList } from '@/lib/ipc/map-catalog';
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+
 import { success } from '../../../shared/envelope';
 import type { GameState } from '../../../shared/game-state';
 import type { MapSummary } from '../../../shared/map-catalog';
-import { SidebarProvider } from '../../components/ui/sidebar';
-import { loadMapList } from '../../lib/ipc/map-catalog';
-import { useGameStateStore } from '../../stores/game-state-store';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
 import { AppSidebar } from './AppSidebar';
 
 vi.mock('../../lib/ipc/map-catalog', () => ({

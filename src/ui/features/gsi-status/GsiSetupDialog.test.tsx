@@ -2,9 +2,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { GsiSetupPlan } from '@/lib/ipc/gsi-setup';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { CommandResult } from '../../../shared/envelope';
-import type { GsiSetupPlan } from '../../lib/ipc/gsi-setup';
 import { GsiSetupDialog } from './GsiSetupDialog';
 
 const readyPlan: GsiSetupPlan = {

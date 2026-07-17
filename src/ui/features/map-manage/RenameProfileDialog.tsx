@@ -1,8 +1,7 @@
 import type { JSX } from 'react';
 import { useId, useState } from 'react';
 
-import type { MapProfileSummary } from '../../../shared/map-catalog';
-import { Button } from '../../components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -11,10 +10,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/ui/dialog';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { renameProfile } from '../../lib/ipc/map-catalog';
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { renameProfile } from '@/lib/ipc/map-catalog';
+
+import type { MapProfileSummary } from '../../../shared/map-catalog';
 
 export interface RenameProfileDialogProps {
   readonly mapId: string;

@@ -1,8 +1,7 @@
 import type { JSX } from 'react';
 import { useId, useState } from 'react';
 
-import type { CreateProfileSource, MapSummary } from '../../../shared/map-catalog';
-import { Button } from '../../components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -11,17 +10,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/ui/dialog';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
-import { createProfile } from '../../lib/ipc/map-catalog';
+} from '@/components/ui/select';
+import { createProfile } from '@/lib/ipc/map-catalog';
+
+import type { CreateProfileSource, MapSummary } from '../../../shared/map-catalog';
 
 /** The upload choice in the source select; fork values carry the id. */
 const UPLOAD_SOURCE = 'upload';

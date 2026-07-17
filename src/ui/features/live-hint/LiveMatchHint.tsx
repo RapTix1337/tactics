@@ -3,10 +3,11 @@ import { XIcon } from 'lucide-react';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+
 import type { GameStateMap } from '../../../shared/game-state';
-import { Button } from '../../components/ui/button';
-import { useGameStateStore } from '../../stores/game-state-store';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
 
 /**
  * The identity of the running match: a new key re-arms the hint after a

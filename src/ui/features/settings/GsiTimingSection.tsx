@@ -1,14 +1,15 @@
 import type { JSX } from 'react';
 import { useId, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { updateSettings } from '@/lib/ipc/settings';
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useSettingsStore } from '@/stores/settings-store';
+
 import type { GsiTiming } from '../../../shared/settings';
 import { GSI_TIMINGS } from '../../../shared/settings';
-import { Button } from '../../components/ui/button';
-import { Label } from '../../components/ui/label';
-import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
-import { updateSettings } from '../../lib/ipc/settings';
-import { useGameStateStore } from '../../stores/game-state-store';
-import { useSettingsStore } from '../../stores/settings-store';
 import { GSI_RESTART_NOTICE } from '../gsi-status/GsiSetupDialog';
 import { STATUS_PRESENTATIONS } from '../gsi-status/GsiStatusBadge';
 

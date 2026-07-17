@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useId, useState } from 'react';
 
-import { Button } from '../../components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -10,9 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/ui/dialog';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export interface CalloutNameDialogProps {
   readonly title: string;

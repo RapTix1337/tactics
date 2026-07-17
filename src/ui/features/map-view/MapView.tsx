@@ -1,11 +1,12 @@
 import type { JSX, PointerEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { loadProfile } from '@/lib/ipc/map-catalog';
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+
 import type { MapProfileDetails } from '../../../shared/map-catalog';
 import { MAX_CALLOUTS_PER_PROFILE } from '../../../shared/map-catalog';
-import { Button } from '../../components/ui/button';
-import { loadProfile } from '../../lib/ipc/map-catalog';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
 import type { NormalizedPoint } from './callout-editing';
 import { clampNormalized, isInsideImage, screenToNormalized } from './callout-editing';
 import { CalloutLayer } from './CalloutLayer';

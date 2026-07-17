@@ -1,8 +1,7 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 
-import type { MapProfileSummary } from '../../../shared/map-catalog';
-import { Button } from '../../components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -11,8 +10,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/ui/dialog';
-import { deleteProfile } from '../../lib/ipc/map-catalog';
+} from '@/components/ui/dialog';
+import { deleteProfile } from '@/lib/ipc/map-catalog';
+
+import type { MapProfileSummary } from '../../../shared/map-catalog';
 
 export interface DeleteProfileDialogProps {
   readonly mapId: string;

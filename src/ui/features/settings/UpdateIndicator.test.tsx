@@ -2,10 +2,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { useUpdateStore } from '@/stores/update-store';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { CommandResult } from '../../../shared/envelope';
 import type { UpdateState } from '../../../shared/update-state';
-import { useUpdateStore } from '../../stores/update-store';
 import { UpdateIndicator } from './UpdateIndicator';
 
 function installBridge(

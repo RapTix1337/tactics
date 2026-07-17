@@ -1,9 +1,9 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 
-import { Button } from '../../components/ui/button';
-import { installUpdate } from '../../lib/ipc/updates';
-import { useUpdateStore } from '../../stores/update-store';
+import { Button } from '@/components/ui/button';
+import { installUpdate } from '@/lib/ipc/updates';
+import { useUpdateStore } from '@/stores/update-store';
 
 /**
  * The sidebar's unobtrusive update indicator (E18.2, REL-02): invisible

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 
+import { updateCallouts } from '@/lib/ipc/map-catalog';
+
 import type { MapProfileDetails } from '../../../shared/map-catalog';
-import { updateCallouts } from '../../lib/ipc/map-catalog';
 import type { DraftCallout, NormalizedPoint } from './callout-editing';
 import {
   addCallout,

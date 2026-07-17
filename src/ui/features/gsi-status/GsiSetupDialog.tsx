@@ -1,8 +1,7 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 
-import type { CommandError } from '../../../shared/envelope';
-import { Button } from '../../components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -11,9 +10,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../../components/ui/dialog';
-import type { ReadyGsiSetupPlan } from '../../lib/ipc/gsi-setup';
-import { applyGsiSetup, loadGsiSetupPlan, pickCs2Path } from '../../lib/ipc/gsi-setup';
+} from '@/components/ui/dialog';
+import type { ReadyGsiSetupPlan } from '@/lib/ipc/gsi-setup';
+import { applyGsiSetup, loadGsiSetupPlan, pickCs2Path } from '@/lib/ipc/gsi-setup';
+
+import type { CommandError } from '../../../shared/envelope';
 
 type PlanState =
   | { readonly phase: 'loading' }

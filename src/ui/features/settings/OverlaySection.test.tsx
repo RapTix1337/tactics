@@ -1,10 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { updateSettings } from '@/lib/ipc/settings';
+import { useSettingsStore } from '@/stores/settings-store';
+
 import { success } from '../../../shared/envelope';
 import type { Settings } from '../../../shared/settings';
-import { updateSettings } from '../../lib/ipc/settings';
-import { useSettingsStore } from '../../stores/settings-store';
 import { OverlaySection } from './OverlaySection';
 
 vi.mock('../../lib/ipc/settings', () => ({ updateSettings: vi.fn() }));

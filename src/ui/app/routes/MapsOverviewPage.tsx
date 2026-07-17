@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 
-import { MapsOverview } from '../../features/map-manage/MapsOverview';
+import { MapsOverview } from '@/features/map-manage/MapsOverview';
 
 /**
  * `/maps` (06-ui.md §2): the app home (MVP-11) — the map-manage feature

@@ -1,9 +1,10 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { useGameStateStore } from '@/stores/game-state-store';
+
 import type { GsiConnectionStatus } from '../../../shared/game-state';
-import { Button } from '../../components/ui/button';
-import { useGameStateStore } from '../../stores/game-state-store';
 import { GsiSetupDialog } from './GsiSetupDialog';
 import { GsiStatusBadge } from './GsiStatusBadge';
 
