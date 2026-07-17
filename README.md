@@ -16,6 +16,40 @@ connects to Counter-Strike 2 via Valve's official
 interface. It aims to remove all manual setup: install the app, and it detects
 CS2, configures GSI for you, and reacts live to what you are playing.
 
+## Screenshots
+
+### All maps
+
+Every installed map with its callout profiles, ready to open in the editor.
+
+![The All maps view: a grid of map cards, each showing its callout profile count and a "View map" button.](assets/screenshots/all-maps.png)
+
+### Live view
+
+The currently played map with all callouts, your live performance, the
+scoreboard, and team-level round economy — driven entirely by GSI.
+
+![The Live view: the current map with callouts in the center, a performance panel on the left, and the enemy team economy on the right.](assets/screenshots/live.png)
+
+### Overlay
+
+The Live view rendered as a transparent window on top of the game.
+
+![The Overlay: the live map and panels drawn semi-transparently over Counter-Strike 2, with per-component opacity sliders in the app window.](assets/screenshots/overlay.png)
+
+The overlay is built to sit unobtrusively on top of your game:
+
+- **Freely resizable** — drag the overlay window to any size and position that
+  fits your setup.
+- **Hideable scoreboard** — toggle the scoreboard off when you only want the
+  map and callouts.
+- **Per-component transparency** — adjust the opacity of the scoreboard, map,
+  callouts, and title bar & status independently, so nothing you need is
+  obscured and nothing you don't distracts you.
+- **Fullscreen-windowed only** — the overlay draws on top of CS2 only in
+  **fullscreen-windowed** mode. If you play in exclusive fullscreen, keep the
+  TactiCS app open on a **second monitor** instead.
+
 ## Vision
 
 Become the go-to open-source companion for CS2 players who want to learn maps,
