@@ -3,9 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useSettingsStore } from '@/stores/settings-store';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { Settings } from '../../../shared/settings';
-import { useSettingsStore } from '../../stores/settings-store';
 import { ScoreboardToggle } from './ScoreboardToggle';
 
 const storedSettings: Settings = {

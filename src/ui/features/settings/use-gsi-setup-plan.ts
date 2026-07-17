@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
-import type { ReadyGsiSetupPlan } from '../../lib/ipc/gsi-setup';
-import { loadGsiSetupPlan } from '../../lib/ipc/gsi-setup';
-import { useSettingsStore } from '../../stores/settings-store';
+import type { ReadyGsiSetupPlan } from '@/lib/ipc/gsi-setup';
+import { loadGsiSetupPlan } from '@/lib/ipc/gsi-setup';
+import { useSettingsStore } from '@/stores/settings-store';
 
 /** The settings sections' view of `gsi.getSetupPlan` (E16.2). */
 export type GsiSetupPlanView =

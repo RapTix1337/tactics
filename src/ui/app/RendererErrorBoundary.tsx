@@ -1,7 +1,8 @@
 import type { JSX, ReactNode } from 'react';
 import { Component } from 'react';
 
-import type { ErrorReporter } from '../lib/errors/error-reporting';
+import type { ErrorReporter } from '@/lib/errors/error-reporting';
+
 import { RouteErrorFallback } from './RouteErrorFallback';
 
 interface RendererErrorBoundaryProps {

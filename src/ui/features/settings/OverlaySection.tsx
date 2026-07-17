@@ -1,6 +1,7 @@
 import type { JSX } from 'react';
 
-import { useSettingsStore } from '../../stores/settings-store';
+import { useSettingsStore } from '@/stores/settings-store';
+
 import { OverlayControls } from '../overlay-controls/OverlayControls';
 
 /**

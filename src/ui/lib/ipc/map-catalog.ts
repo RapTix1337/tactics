@@ -1,3 +1,5 @@
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { CommandResult } from '../../../shared/envelope';
 import { success } from '../../../shared/envelope';
@@ -7,7 +9,6 @@ import type {
   MapProfileDetails,
   MapSummary,
 } from '../../../shared/map-catalog';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
 import { invokeCommand } from './invoke';
 
 /**

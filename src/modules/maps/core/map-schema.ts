@@ -123,7 +123,7 @@ export function parseCalloutList(value: unknown): CalloutListParseResult {
   return { ok: true, callouts: result.data };
 }
 
-function formatIssue(issue: z.ZodIssue): string {
+function formatIssue(issue: z.core.$ZodIssue): string {
   const path = issue.path.length > 0 ? issue.path.map(String).join('.') : '(root)';
   return `${path}: ${issue.message}`;
 }

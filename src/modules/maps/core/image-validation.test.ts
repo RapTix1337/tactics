@@ -52,14 +52,14 @@ describe('checkSvgUpload (ADR-045: the shrunk upload security scan)', () => {
   it('rejects a DOCTYPE even though the parser silently discards it', () => {
     const result = checkSvgUpload('<!DOCTYPE svg><svg><rect/></svg>');
     expect(result).toMatchObject({ ok: false, code: 'REJECTED' });
-    expect(result.ok === false && result.issues.join(' ')).toContain('<!DOCTYPE');
+    expect(!result.ok && result.issues.join(' ')).toContain('<!DOCTYPE');
   });
 
   it('rejects entity declarations (XXE vector)', () => {
     const hostile = '<!DOCTYPE svg [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><svg>&xxe;</svg>';
     const result = checkSvgUpload(hostile);
     expect(result).toMatchObject({ ok: false, code: 'REJECTED' });
-    expect(result.ok === false && result.issues.join(' ')).toContain('<!ENTITY');
+    expect(!result.ok && result.issues.join(' ')).toContain('<!ENTITY');
   });
 
   it('rejects <script> elements, including namespaced and nested ones', () => {
@@ -92,7 +92,7 @@ describe('checkSvgUpload (ADR-045: the shrunk upload security scan)', () => {
   it('reports every violation at once (one fix pass per upload)', () => {
     const result = checkSvgUpload('<svg onload="x"><script/><rect onclick="y"/></svg>');
     expect(result.ok).toBe(false);
-    expect(result.ok === false && result.issues).toHaveLength(3);
+    expect(!result.ok && result.issues).toHaveLength(3);
   });
 
   it('rejects hostile nesting depth without crashing', () => {

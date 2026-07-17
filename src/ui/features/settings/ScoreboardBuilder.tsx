@@ -21,10 +21,11 @@ import { GripVerticalIcon, PlusIcon, XIcon } from 'lucide-react';
 import type { JSX } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
 import type { FieldId } from '../../../shared/settings';
 import { FIELD_IDS, SCOREBOARD_GROUP_LABEL_MAX_LENGTH } from '../../../shared/settings';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
 import { STAT_FIELDS } from '../scoreboard/stat-fields';
 import type { DraftGroup, DraftLayout } from './scoreboard-builder-model';
 import {

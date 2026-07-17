@@ -2,12 +2,13 @@ import { Link } from '@tanstack/react-router';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+import { openExternal } from '@/lib/ipc/external-links';
+import { createProfile, loadMapList } from '@/lib/ipc/map-catalog';
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+
 import { RADAR_IMAGE_HELP_URL } from '../../../shared/external-urls';
 import type { MapSummary } from '../../../shared/map-catalog';
-import { Button } from '../../components/ui/button';
-import { openExternal } from '../../lib/ipc/external-links';
-import { createProfile, loadMapList } from '../../lib/ipc/map-catalog';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
 
 /**
  * The first profile created from the overview's one-click upload gets a

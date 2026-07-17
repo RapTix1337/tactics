@@ -4,13 +4,14 @@ import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ErrorReporter } from '@/lib/errors/error-reporting';
+import { loadMapList, loadProfile } from '@/lib/ipc/map-catalog';
+import { useAppStore } from '@/stores/app-store';
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+
 import { failure, success } from '../../shared/envelope';
 import type { MapSummary } from '../../shared/map-catalog';
-import type { ErrorReporter } from '../lib/errors/error-reporting';
-import { loadMapList, loadProfile } from '../lib/ipc/map-catalog';
-import { useAppStore } from '../stores/app-store';
-import { useGameStateStore } from '../stores/game-state-store';
-import { useMapCatalogStore } from '../stores/map-catalog-store';
 import { createAppRouter } from './router';
 
 vi.mock('../lib/ipc/map-catalog', () => ({

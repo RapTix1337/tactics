@@ -4,20 +4,21 @@ import { useId, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import type { Settings } from '../../../shared/settings';
-import { SETTINGS_FIELD_SCHEMAS } from '../../../shared/settings';
-import { Button } from '../../components/ui/button';
-import { Label } from '../../components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
-import { Switch } from '../../components/ui/switch';
-import { updateSettings } from '../../lib/ipc/settings';
-import { useSettingsStore } from '../../stores/settings-store';
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { updateSettings } from '@/lib/ipc/settings';
+import { useSettingsStore } from '@/stores/settings-store';
+
+import type { Settings } from '../../../shared/settings';
+import { SETTINGS_FIELD_SCHEMAS } from '../../../shared/settings';
 
 /**
  * The four E16.1 fields of 01-requirements.md §9 — the shared per-field

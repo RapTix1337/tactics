@@ -2,16 +2,17 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { CommandResult } from '../../../shared/envelope';
-import { failure, success } from '../../../shared/envelope';
-import type { MapSummary } from '../../../shared/map-catalog';
 import {
   createProfile,
   deleteProfile,
   renameProfile,
   replaceProfileImage,
   setDefaultProfile,
-} from '../../lib/ipc/map-catalog';
+} from '@/lib/ipc/map-catalog';
+
+import type { CommandResult } from '../../../shared/envelope';
+import { failure, success } from '../../../shared/envelope';
+import type { MapSummary } from '../../../shared/map-catalog';
 import { MapProfileManager } from './MapProfileManager';
 
 vi.mock('../../lib/ipc/map-catalog', () => ({

@@ -2,8 +2,9 @@ import { render, screen } from '@testing-library/react';
 import { act } from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { useGameStateStore } from '@/stores/game-state-store';
+
 import type { GsiConnectionStatus } from '../../../shared/game-state';
-import { useGameStateStore } from '../../stores/game-state-store';
 import { GsiStatusBadge } from './GsiStatusBadge';
 
 function setStatus(status: GsiConnectionStatus): void {

@@ -38,9 +38,12 @@ export interface ExternalLinkDeps {
  * App-level command registrations, called once at startup before the main
  * window exists — no invoke can precede them.
  *
+ * @param deps the command registrar that binds each handler to its channel.
  * @param rendererLogger renderer-scoped logger: reported renderer errors
  * must appear in the log under the `renderer` scope, not the IPC layer's
  * (03-technical-design.md §8.3).
+ * @param snapshot slice providers for the initial-state snapshot.
+ * @param external external-link opener (`shell.openExternal`-shaped).
  */
 export function registerAppCommands<TEvent>(
   deps: CommandRegistrationDeps<TEvent>,

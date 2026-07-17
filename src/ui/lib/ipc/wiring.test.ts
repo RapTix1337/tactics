@@ -1,17 +1,18 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { useAppStore } from '@/stores/app-store';
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useScoreboardStore } from '@/stores/scoreboard-store';
+import { useSettingsStore } from '@/stores/settings-store';
+import { useUpdateStore } from '@/stores/update-store';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { GameState } from '../../../shared/game-state';
 import type { OverlayState } from '../../../shared/overlay-state';
 import type { ScoreboardState } from '../../../shared/scoreboard-state';
 import type { Settings } from '../../../shared/settings';
 import type { UpdateState } from '../../../shared/update-state';
-import { useAppStore } from '../../stores/app-store';
-import { useGameStateStore } from '../../stores/game-state-store';
 import { useOverlayStore } from '../../stores/overlay-store';
-import { useScoreboardStore } from '../../stores/scoreboard-store';
-import { useSettingsStore } from '../../stores/settings-store';
-import { useUpdateStore } from '../../stores/update-store';
 import type { AppSnapshot } from './bootstrap';
 import { ipcWiring } from './wiring';
 

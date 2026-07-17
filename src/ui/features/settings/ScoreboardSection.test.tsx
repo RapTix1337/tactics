@@ -2,10 +2,11 @@ import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useSettingsStore } from '@/stores/settings-store';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { CommandResult } from '../../../shared/envelope';
 import type { Settings } from '../../../shared/settings';
-import { useSettingsStore } from '../../stores/settings-store';
 import { ScoreboardSection } from './ScoreboardSection';
 
 const storedSettings: Settings = {

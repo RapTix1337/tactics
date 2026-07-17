@@ -10,11 +10,12 @@ import {
 } from '@tanstack/react-router';
 import type { JSX } from 'react';
 
-import { GsiStatusPanel } from '../features/gsi-status/GsiStatusPanel';
-import { LiveMatchHint } from '../features/live-hint/LiveMatchHint';
-import { UpdateIndicator } from '../features/settings/UpdateIndicator';
-import { AppSidebar } from '../features/sidebar/AppSidebar';
-import type { ErrorReporter } from '../lib/errors/error-reporting';
+import { GsiStatusPanel } from '@/features/gsi-status/GsiStatusPanel';
+import { LiveMatchHint } from '@/features/live-hint/LiveMatchHint';
+import { UpdateIndicator } from '@/features/settings/UpdateIndicator';
+import { AppSidebar } from '@/features/sidebar/AppSidebar';
+import type { ErrorReporter } from '@/lib/errors/error-reporting';
+
 import { AppLayout } from './layouts/AppLayout';
 import { RouteErrorFallback } from './RouteErrorFallback';
 import { LivePage } from './routes/LivePage';

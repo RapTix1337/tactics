@@ -1,16 +1,16 @@
 import type { JSX } from 'react';
 
-import { LiveContent } from '../../features/live-content/LiveContent';
-import { MapView } from '../../features/map-view/MapView';
-import { OverlayPlaceholder } from '../../features/overlay-controls/OverlayPlaceholder';
-import { OverlayToggle } from '../../features/overlay-controls/OverlayToggle';
-import { ScoreboardFrame } from '../../features/scoreboard/ScoreboardFrame';
-import { ScoreboardToggle } from '../../features/scoreboard/ScoreboardToggle';
-import { useAppStore } from '../../stores/app-store';
-import { useGameStateStore } from '../../stores/game-state-store';
-import { useOverlayStore } from '../../stores/overlay-store';
-import { useScoreboardStore } from '../../stores/scoreboard-store';
-import { useSettingsStore } from '../../stores/settings-store';
+import { LiveContent } from '@/features/live-content/LiveContent';
+import { MapView } from '@/features/map-view/MapView';
+import { OverlayPlaceholder } from '@/features/overlay-controls/OverlayPlaceholder';
+import { OverlayToggle } from '@/features/overlay-controls/OverlayToggle';
+import { ScoreboardFrame } from '@/features/scoreboard/ScoreboardFrame';
+import { ScoreboardToggle } from '@/features/scoreboard/ScoreboardToggle';
+import { useAppStore } from '@/stores/app-store';
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useOverlayStore } from '@/stores/overlay-store';
+import { useScoreboardStore } from '@/stores/scoreboard-store';
+import { useSettingsStore } from '@/stores/settings-store';
 
 /**
  * `/live` (E15.3, 06-ui.md §2): the game-state-driven view, rendered 1:1

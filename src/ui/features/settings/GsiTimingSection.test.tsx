@@ -3,11 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useSettingsStore } from '@/stores/settings-store';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { CommandResult } from '../../../shared/envelope';
 import type { Settings } from '../../../shared/settings';
-import { useGameStateStore } from '../../stores/game-state-store';
-import { useSettingsStore } from '../../stores/settings-store';
 import { GSI_RESTART_NOTICE } from '../gsi-status/GsiSetupDialog';
 import { GsiTimingSection } from './GsiTimingSection';
 

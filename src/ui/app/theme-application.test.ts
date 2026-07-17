@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { useSettingsStore } from '@/stores/settings-store';
+
 import type { Settings, Theme } from '../../shared/settings';
-import { useSettingsStore } from '../stores/settings-store';
 import { DARK_CLASS, resolveEffectiveTheme, startThemeApplication } from './theme-application';
 
 function makeSettings(theme: Theme): Settings {

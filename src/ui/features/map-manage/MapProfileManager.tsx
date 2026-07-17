@@ -1,17 +1,18 @@
 import type { JSX } from 'react';
 import { useId, useState } from 'react';
 
-import type { MapSummary } from '../../../shared/map-catalog';
-import { Button } from '../../components/ui/button';
-import { Label } from '../../components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
-import { replaceProfileImage, setDefaultProfile } from '../../lib/ipc/map-catalog';
+} from '@/components/ui/select';
+import { replaceProfileImage, setDefaultProfile } from '@/lib/ipc/map-catalog';
+
+import type { MapSummary } from '../../../shared/map-catalog';
 import { CreateProfileDialog } from './CreateProfileDialog';
 import { DeleteProfileDialog } from './DeleteProfileDialog';
 import { RenameProfileDialog } from './RenameProfileDialog';

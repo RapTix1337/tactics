@@ -1,10 +1,10 @@
 import type { JSX } from 'react';
 import { useId } from 'react';
 
-import { Label } from '../../components/ui/label';
-import { Switch } from '../../components/ui/switch';
-import { updateSettings } from '../../lib/ipc/settings';
-import { useSettingsStore } from '../../stores/settings-store';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { updateSettings } from '@/lib/ipc/settings';
+import { useSettingsStore } from '@/stores/settings-store';
 
 /**
  * The scoreboard pill toggle for the live page header (SCB.8, spec AC 1):

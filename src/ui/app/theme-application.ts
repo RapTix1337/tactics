@@ -1,5 +1,6 @@
+import { useSettingsStore } from '@/stores/settings-store';
+
 import type { Theme } from '../../shared/settings';
-import { useSettingsStore } from '../stores/settings-store';
 
 /**
  * Theme application (UI-04, 06-ui.md §4): the effective theme is applied as

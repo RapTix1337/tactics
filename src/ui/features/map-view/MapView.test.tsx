@@ -1,10 +1,11 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { CommandResult } from '../../../shared/envelope';
 import type { MapProfileDetails } from '../../../shared/map-catalog';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
 import { MapView } from './MapView';
 
 const profileDetails: MapProfileDetails = {

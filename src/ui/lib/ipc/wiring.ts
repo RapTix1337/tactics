@@ -1,9 +1,10 @@
-import { useAppStore } from '../../stores/app-store';
-import { useGameStateStore } from '../../stores/game-state-store';
-import { useOverlayStore } from '../../stores/overlay-store';
-import { useScoreboardStore } from '../../stores/scoreboard-store';
-import { useSettingsStore } from '../../stores/settings-store';
-import { useUpdateStore } from '../../stores/update-store';
+import { useAppStore } from '@/stores/app-store';
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useOverlayStore } from '@/stores/overlay-store';
+import { useScoreboardStore } from '@/stores/scoreboard-store';
+import { useSettingsStore } from '@/stores/settings-store';
+import { useUpdateStore } from '@/stores/update-store';
+
 import type { IpcWiring } from './bootstrap';
 
 /**

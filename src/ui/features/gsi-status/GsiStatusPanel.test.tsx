@@ -3,9 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useGameStateStore } from '@/stores/game-state-store';
+
 import type { TacticsBridge } from '../../../shared/bridge';
 import type { GsiConnectionStatus } from '../../../shared/game-state';
-import { useGameStateStore } from '../../stores/game-state-store';
 import { GsiStatusPanel } from './GsiStatusPanel';
 
 function setStatus(status: GsiConnectionStatus): void {

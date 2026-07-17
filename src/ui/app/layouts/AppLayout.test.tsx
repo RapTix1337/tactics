@@ -2,7 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
-import { Sidebar } from '../../components/ui/sidebar';
+import { Sidebar } from '@/components/ui/sidebar';
+
 import { AppLayout } from './AppLayout';
 
 function getSidebarState(): string | null {

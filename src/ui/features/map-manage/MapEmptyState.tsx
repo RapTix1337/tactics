@@ -1,8 +1,9 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 
+import { Button } from '@/components/ui/button';
+
 import type { MapSummary } from '../../../shared/map-catalog';
-import { Button } from '../../components/ui/button';
 import { CreateProfileDialog } from './CreateProfileDialog';
 
 export interface MapEmptyStateProps {

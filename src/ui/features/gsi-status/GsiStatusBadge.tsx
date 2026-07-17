@@ -1,7 +1,8 @@
 import type { JSX } from 'react';
 
+import { useGameStateStore } from '@/stores/game-state-store';
+
 import type { GsiConnectionStatus } from '../../../shared/game-state';
-import { useGameStateStore } from '../../stores/game-state-store';
 
 interface StatusPresentation {
   readonly label: string;

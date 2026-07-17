@@ -1,8 +1,8 @@
 import type { JSX } from 'react';
 import { useEffect } from 'react';
 
-import { Button } from '../components/ui/button';
-import type { ErrorReporter } from '../lib/errors/error-reporting';
+import { Button } from '@/components/ui/button';
+import type { ErrorReporter } from '@/lib/errors/error-reporting';
 
 interface RouteErrorFallbackProps {
   readonly error: Error;

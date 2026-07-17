@@ -1,12 +1,12 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 
-import { Button } from '../../components/ui/button';
-import { MapEmptyState } from '../../features/map-manage/MapEmptyState';
-import { MapProfileManager } from '../../features/map-manage/MapProfileManager';
-import { MapView } from '../../features/map-view/MapView';
-import { loadMapList } from '../../lib/ipc/map-catalog';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
+import { Button } from '@/components/ui/button';
+import { MapEmptyState } from '@/features/map-manage/MapEmptyState';
+import { MapProfileManager } from '@/features/map-manage/MapProfileManager';
+import { MapView } from '@/features/map-view/MapView';
+import { loadMapList } from '@/lib/ipc/map-catalog';
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
 
 interface MapPageProps {
   readonly mapId: string;

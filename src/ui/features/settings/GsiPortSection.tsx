@@ -4,13 +4,14 @@ import { useId, useMemo, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { updateSettings } from '@/lib/ipc/settings';
+import { useSettingsStore } from '@/stores/settings-store';
+
 import { SETTINGS_FIELD_SCHEMAS } from '../../../shared/settings';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Switch } from '../../components/ui/switch';
-import { updateSettings } from '../../lib/ipc/settings';
-import { useSettingsStore } from '../../stores/settings-store';
 import { useGsiSetupPlan } from './use-gsi-setup-plan';
 
 /** The shared field schema minus its automatic marker — the manual input

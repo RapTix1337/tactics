@@ -10,10 +10,11 @@ import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { useGameStateStore } from '@/stores/game-state-store';
+import { useMapCatalogStore } from '@/stores/map-catalog-store';
+
 import type { GameState } from '../../../shared/game-state';
 import type { MapSummary } from '../../../shared/map-catalog';
-import { useGameStateStore } from '../../stores/game-state-store';
-import { useMapCatalogStore } from '../../stores/map-catalog-store';
 import { LiveMatchHint } from './LiveMatchHint';
 
 const dust2: MapSummary = {
