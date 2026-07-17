@@ -13,20 +13,27 @@
 !define TACTICS_GSI_CFG_NAME "gamestate_integration_tactics.cfg"
 
 # Windows' game auto-detection can classify TactiCS.exe as a game and apply
-# "Optimizations for windowed games" to its swap chain, which visibly lifts
-# the dark theme's colors (ADR-056). The value below is the same per-exe
-# opt-out the Windows Settings toggle writes; the key holds one value per
-# executable path, so no other program's entry is touched.
+# "Optimizations for windowed games" (ADR-056: visibly lifted dark-theme
+# colors) and, with system HDR on, Auto HDR (ADR-061) to its swap chain.
+# The value below combines the same per-exe opt-out tokens the two Windows
+# Settings toggles write, in the order Windows itself uses; the key holds
+# one value per executable path, so no other program's entry is touched.
+# The V1 string is what ADR-056 installers wrote — kept for migration and
+# uninstall matching only.
 !define DX_GPU_PREFS_KEY "Software\Microsoft\DirectX\UserGpuPreferences"
-!define TACTICS_SWAP_EFFECT_OPT_OUT "SwapEffectUpgradeEnable=0;"
+!define TACTICS_GPU_PREFS_OPT_OUT "AutoHDREnable=0;SwapEffectUpgradeEnable=0;"
+!define TACTICS_GPU_PREFS_OPT_OUT_V1 "SwapEffectUpgradeEnable=0;"
 
 !macro customInstall
-  # Write the opt-out only when no entry for our exe exists — an existing
-  # entry is user-configured (Settings → Display → Graphics) and stays
-  # untouched. Auto-updates re-run this macro and hit the same guard.
+  # Write the opt-out when no entry for our exe exists, or when the entry
+  # is exactly the ADR-056 string a previous installer wrote (provably
+  # ours — migrated to the combined opt-out, ADR-061). Anything else is
+  # user-configured (Settings → Display → Graphics) and stays untouched.
+  # Auto-updates re-run this macro and hit the same guards.
   ReadRegStr $0 HKCU "${DX_GPU_PREFS_KEY}" "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
   ${if} $0 == ""
-    WriteRegStr HKCU "${DX_GPU_PREFS_KEY}" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "${TACTICS_SWAP_EFFECT_OPT_OUT}"
+  ${orIf} $0 == "${TACTICS_GPU_PREFS_OPT_OUT_V1}"
+    WriteRegStr HKCU "${DX_GPU_PREFS_KEY}" "$INSTDIR\${APP_EXECUTABLE_FILENAME}" "${TACTICS_GPU_PREFS_OPT_OUT}"
   ${endIf}
 !macroend
 
@@ -47,11 +54,12 @@
       ${endIf}
     ${endIf}
     DeleteRegKey HKCU "${TACTICS_REGISTRY_KEY}"
-    # ADR-056: remove the windowed-game-optimizations opt-out — but only if
-    # it still holds exactly the string customInstall wrote; anything else
-    # is user-configured and stays.
+    # ADR-056/061: remove the graphics opt-out — but only if it still holds
+    # exactly a string one of our installers wrote (current or V1, defense
+    # in depth); anything else is user-configured and stays.
     ReadRegStr $0 HKCU "${DX_GPU_PREFS_KEY}" "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
-    ${if} $0 == "${TACTICS_SWAP_EFFECT_OPT_OUT}"
+    ${if} $0 == "${TACTICS_GPU_PREFS_OPT_OUT}"
+    ${orIf} $0 == "${TACTICS_GPU_PREFS_OPT_OUT_V1}"
       DeleteRegValue HKCU "${DX_GPU_PREFS_KEY}" "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
     ${endIf}
   ${endIf}

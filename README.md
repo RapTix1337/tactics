@@ -98,18 +98,22 @@ built and published by the tag-triggered GitHub Actions release workflow
 ### Troubleshooting: dark theme looks washed out / brighter than expected
 
 Windows' game auto-detection sometimes classifies TactiCS as a game and
-applies "Optimizations for windowed games" to it, which visibly lifts the
-dark theme's colors. The installer opts the app out automatically: it
-writes the per-executable value `SwapEffectUpgradeEnable=0;` for
+applies "Optimizations for windowed games" — and, when system HDR is on,
+Auto HDR — to it, which visibly shifts the dark theme's colors. The
+installer opts the app out of both automatically: it writes the
+per-executable value `AutoHDREnable=0;SwapEffectUpgradeEnable=0;` for
 `TactiCS.exe` under `HKCU\Software\Microsoft\DirectX\UserGpuPreferences`
 (skipped if you already configured an entry for TactiCS there yourself;
 removed again on uninstall). No other program's entry is affected.
+Updating from an older version migrates the previous
+optimizations-only entry, unless you changed it yourself.
 
-If you still see washed-out colors — for example on an install made
-before this fix shipped, or when running an unpackaged build — fix it
-manually: **Settings → System → Display → Graphics**, add `TactiCS.exe`
-as a desktop app, open its **Options**, tick **"Don't use optimizations
-for windowed games"**, and restart the app.
+If you still see washed-out or off colors — for example on an install
+made before this fix shipped, or when running an unpackaged build — fix
+it manually: **Settings → System → Display → Graphics**, add
+`TactiCS.exe` as a desktop app, open its **Options**, tick **"Don't use
+optimizations for windowed games"** and **"Don't use Auto HDR"** (the
+latter appears only when HDR is available), and restart the app.
 
 ## Development Setup
 
