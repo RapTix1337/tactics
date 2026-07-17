@@ -287,7 +287,7 @@ function toPlayerState(player: ValidatedPayload['player']): GsiPlayerState | nul
  * value never enters the string, guaranteeing ban-list-safe issues by
  * construction instead of relying on Zod's message wording.
  */
-function formatIssue(issue: z.ZodIssue): string {
+function formatIssue(issue: z.core.$ZodIssue): string {
   const path = issue.path.length > 0 ? issue.path.map(String).join('.') : '(root)';
   if (issue.code === 'invalid_type') {
     return `${path}: expected ${issue.expected}`;
