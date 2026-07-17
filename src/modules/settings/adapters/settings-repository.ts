@@ -46,8 +46,6 @@ const BOOLEAN_FIELDS = [
   'closeToTray',
   'autoUpdate',
   'scoreboardEnabled',
-  'overlayMapExempt',
-  'overlayScoreboardExempt',
 ] as const satisfies readonly BooleanSettingsField[];
 
 export function createSettingsRepository(
@@ -138,8 +136,9 @@ function encodeStoredSettings(settings: Settings): Omit<typeof settingsTable.$in
     scoreboardEnabled: settings.scoreboardEnabled ? 1 : 0,
     scoreboardLayout: JSON.stringify(settings.scoreboardLayout),
     gsiTiming: settings.gsiTiming,
-    overlayOpacity: settings.overlayOpacity,
-    overlayMapExempt: settings.overlayMapExempt ? 1 : 0,
-    overlayScoreboardExempt: settings.overlayScoreboardExempt ? 1 : 0,
+    overlayScoreboardOpacity: settings.overlayScoreboardOpacity,
+    overlayMapOpacity: settings.overlayMapOpacity,
+    overlayCalloutOpacity: settings.overlayCalloutOpacity,
+    overlayChromeOpacity: settings.overlayChromeOpacity,
   };
 }

@@ -235,14 +235,15 @@ describe('scoreboard and timing fields (SCB.3, ADR-053)', () => {
   });
 });
 
-describe('overlay fields (OVL.2, ADR-058)', () => {
-  it('round-trips the three overlay fields across close and reopen', () => {
+describe('overlay fields (OVL.2, four per-element fades since OVL.12/ADR-060)', () => {
+  it('round-trips the four per-element opacities across close and reopen', () => {
     const databasePath = newDatabasePath();
     const first = createSettingsRepository(openPort(databasePath), silentLogger);
     first.updateSettings({
-      overlayOpacity: 0.4,
-      overlayMapExempt: true,
-      overlayScoreboardExempt: true,
+      overlayScoreboardOpacity: 0.4,
+      overlayMapOpacity: 0.6,
+      overlayCalloutOpacity: 0.2,
+      overlayChromeOpacity: 0,
     });
     for (const connection of connections.splice(0)) {
       connection.close();
@@ -252,25 +253,26 @@ describe('overlay fields (OVL.2, ADR-058)', () => {
 
     expect(second.getSettings()).toEqual({
       ...SETTINGS_DEFAULTS,
-      overlayOpacity: 0.4,
-      overlayMapExempt: true,
-      overlayScoreboardExempt: true,
+      overlayScoreboardOpacity: 0.4,
+      overlayMapOpacity: 0.6,
+      overlayCalloutOpacity: 0.2,
+      overlayChromeOpacity: 0,
     });
   });
 
-  it('falls back to full opacity on a non-numeric stored value (logged)', () => {
+  it('falls back to full opacity on a non-numeric stored value, keeping the others (logged)', () => {
     const warn = vi.fn();
     const port = openPort();
     const repository = createSettingsRepository(port, { ...silentLogger, warn });
-    repository.updateSettings({ overlayMapExempt: true });
-    port.drizzle.run(sql`update settings set overlay_opacity = 'high'`);
+    repository.updateSettings({ overlayMapOpacity: 0.6 });
+    port.drizzle.run(sql`update settings set overlay_scoreboard_opacity = 'high'`);
 
     const settings = repository.getSettings();
 
-    expect(settings.overlayOpacity).toBe(SETTINGS_DEFAULTS.overlayOpacity);
-    expect(settings.overlayMapExempt).toBe(true);
+    expect(settings.overlayScoreboardOpacity).toBe(SETTINGS_DEFAULTS.overlayScoreboardOpacity);
+    expect(settings.overlayMapOpacity).toBe(0.6);
     expect(warn).toHaveBeenCalledWith('invalid stored settings value replaced by its default', {
-      field: 'overlayOpacity',
+      field: 'overlayScoreboardOpacity',
     });
   });
 
@@ -278,55 +280,41 @@ describe('overlay fields (OVL.2, ADR-058)', () => {
     const warn = vi.fn();
     const port = openPort();
     const repository = createSettingsRepository(port, { ...silentLogger, warn });
-    repository.updateSettings({ overlayOpacity: 0.5 });
-    port.drizzle.run(sql`update settings set overlay_opacity = 1.5`);
+    repository.updateSettings({ overlayChromeOpacity: 0.5 });
+    port.drizzle.run(sql`update settings set overlay_chrome_opacity = 1.5`);
 
-    expect(repository.getSettings().overlayOpacity).toBe(SETTINGS_DEFAULTS.overlayOpacity);
+    expect(repository.getSettings().overlayChromeOpacity).toBe(
+      SETTINGS_DEFAULTS.overlayChromeOpacity,
+    );
     expect(warn).toHaveBeenCalledWith('invalid stored settings value replaced by its default', {
-      field: 'overlayOpacity',
-    });
-  });
-
-  it('treats a non-0/1 exemption column as invalid instead of coercing it', () => {
-    const warn = vi.fn();
-    const port = openPort();
-    const repository = createSettingsRepository(port, { ...silentLogger, warn });
-    repository.updateSettings({ overlayScoreboardExempt: true, overlayOpacity: 0.3 });
-    // 7 is truthy — silent coercion would keep the exemption on.
-    port.drizzle.run(sql`update settings set overlay_scoreboard_exempt = 7`);
-
-    const settings = repository.getSettings();
-
-    expect(settings.overlayScoreboardExempt).toBe(SETTINGS_DEFAULTS.overlayScoreboardExempt);
-    expect(settings.overlayOpacity).toBe(0.3);
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn).toHaveBeenCalledWith('invalid stored settings value replaced by its default', {
-      field: 'overlayScoreboardExempt',
+      field: 'overlayChromeOpacity',
     });
   });
 
   it('rejects an out-of-range opacity update with TypeError and persists nothing', () => {
     const repository = createSettingsRepository(openPort(), silentLogger);
 
-    expect(() => repository.updateSettings({ overlayOpacity: 1.5 })).toThrow(TypeError);
-    expect(repository.getSettings().overlayOpacity).toBe(SETTINGS_DEFAULTS.overlayOpacity);
+    expect(() => repository.updateSettings({ overlayCalloutOpacity: 1.5 })).toThrow(TypeError);
+    expect(repository.getSettings().overlayCalloutOpacity).toBe(
+      SETTINGS_DEFAULTS.overlayCalloutOpacity,
+    );
   });
 });
 
-describe('pre-overlay database upgrade (migration 0004)', () => {
-  it('adds the three settings columns with real defaults — existing values kept, no warnings', () => {
+describe('pre-overlay database upgrade (migrations 0004 + 0005)', () => {
+  it('upgrades a pre-overlay row to the current schema — existing values kept, no warnings', () => {
     const warn = vi.fn();
     const connection = new Database(':memory:');
     connections.push(connection);
     const files = readdirSync(MIGRATIONS_DIRECTORY)
       .filter((name) => name.endsWith('.sql'))
       .sort();
-    const preOverlay = files.filter((name) => !name.startsWith('0004'));
-    expect(preOverlay.length).toBe(files.length - 1);
+    const preOverlay = files.filter((name) => name < '0004');
+    expect(preOverlay.length).toBe(files.length - 2);
     for (const file of preOverlay) {
       connection.exec(readFileSync(join(MIGRATIONS_DIRECTORY, file), 'utf8'));
     }
-    // A settled v0.1 row written before the overlay columns existed.
+    // A settled v0.1 row written before any overlay column existed.
     connection
       .prepare(
         `insert into settings (id, theme, cs2_path, gsi_port, autostart, close_to_tray, auto_update)
@@ -334,7 +322,7 @@ describe('pre-overlay database upgrade (migration 0004)', () => {
       )
       .run();
 
-    for (const file of files.filter((name) => name.startsWith('0004'))) {
+    for (const file of files.filter((name) => name >= '0004')) {
       connection.exec(readFileSync(join(MIGRATIONS_DIRECTORY, file), 'utf8'));
     }
     const typedAccess = drizzle(connection);
@@ -354,6 +342,129 @@ describe('pre-overlay database upgrade (migration 0004)', () => {
       autostart: true,
       closeToTray: false,
     });
+    expect(warn).not.toHaveBeenCalled();
+  });
+});
+
+describe('ADR-060 fade-model migration (0005)', () => {
+  /**
+   * Seeds a post-0004 database (old three-field fade model), applies 0005,
+   * and returns a repository over the upgraded connection.
+   */
+  function upgradeFromExemptions(
+    mapExempt: 0 | 1,
+    scoreboardExempt: 0 | 1,
+    warn: Logger['warn'],
+  ): ReturnType<typeof createSettingsRepository> {
+    const connection = new Database(':memory:');
+    connections.push(connection);
+    const files = readdirSync(MIGRATIONS_DIRECTORY)
+      .filter((name) => name.endsWith('.sql'))
+      .sort();
+    for (const file of files.filter((name) => !name.startsWith('0005'))) {
+      connection.exec(readFileSync(join(MIGRATIONS_DIRECTORY, file), 'utf8'));
+    }
+    // A settled pre-ADR-060 row: base slider at 30 %, exemptions as given.
+    connection
+      .prepare(
+        `insert into settings (id, theme, autostart, close_to_tray, auto_update,
+           overlay_opacity, overlay_map_exempt, overlay_scoreboard_exempt)
+         values (1, 'light', 0, 1, 1, 0.3, ?, ?)`,
+      )
+      .run(mapExempt, scoreboardExempt);
+    for (const file of files.filter((name) => name.startsWith('0005'))) {
+      connection.exec(readFileSync(join(MIGRATIONS_DIRECTORY, file), 'utf8'));
+    }
+    const typedAccess = drizzle(connection);
+    return createSettingsRepository(
+      {
+        drizzle: typedAccess,
+        withTransaction: (fn) => connection.transaction(() => fn(typedAccess))(),
+      },
+      { ...silentLogger, warn },
+    );
+  }
+
+  it.each<{
+    mapExempt: 0 | 1;
+    scoreboardExempt: 0 | 1;
+    expected: Pick<
+      Settings,
+      | 'overlayScoreboardOpacity'
+      | 'overlayMapOpacity'
+      | 'overlayCalloutOpacity'
+      | 'overlayChromeOpacity'
+    >;
+  }>([
+    {
+      mapExempt: 0,
+      scoreboardExempt: 0,
+      expected: {
+        overlayScoreboardOpacity: 0.3,
+        overlayMapOpacity: 0.3,
+        overlayCalloutOpacity: 0.3,
+        overlayChromeOpacity: 0.3,
+      },
+    },
+    {
+      mapExempt: 1,
+      scoreboardExempt: 0,
+      expected: {
+        overlayScoreboardOpacity: 0.3,
+        overlayMapOpacity: 1,
+        overlayCalloutOpacity: 1,
+        overlayChromeOpacity: 0.3,
+      },
+    },
+    {
+      mapExempt: 0,
+      scoreboardExempt: 1,
+      expected: {
+        overlayScoreboardOpacity: 1,
+        overlayMapOpacity: 0.3,
+        overlayCalloutOpacity: 0.3,
+        overlayChromeOpacity: 0.3,
+      },
+    },
+    {
+      mapExempt: 1,
+      scoreboardExempt: 1,
+      expected: {
+        overlayScoreboardOpacity: 1,
+        overlayMapOpacity: 1,
+        overlayCalloutOpacity: 1,
+        overlayChromeOpacity: 0.3,
+      },
+    },
+  ])(
+    'converts map_exempt=$mapExempt scoreboard_exempt=$scoreboardExempt per the ADR-060 mapping',
+    ({ mapExempt, scoreboardExempt, expected }) => {
+      const warn = vi.fn();
+
+      const settings = upgradeFromExemptions(mapExempt, scoreboardExempt, warn).getSettings();
+
+      expect(settings).toEqual({ ...SETTINGS_DEFAULTS, theme: 'light', ...expected });
+      expect(warn).not.toHaveBeenCalled();
+    },
+  );
+
+  it('gives a row written without the fade columns the all-1 defaults', () => {
+    const warn = vi.fn();
+    const port = openPort();
+    // All migrations applied; the row never mentions a fade column, so the
+    // 0005 DDL defaults must carry (a fresh install upgrading no data).
+    port.drizzle.run(
+      sql`insert into settings (id, theme, autostart, close_to_tray, auto_update)
+          values (1, 'light', 0, 1, 1)`,
+    );
+    const repository = createSettingsRepository(port, { ...silentLogger, warn });
+
+    const settings = repository.getSettings();
+
+    expect(settings.overlayScoreboardOpacity).toBe(1);
+    expect(settings.overlayMapOpacity).toBe(1);
+    expect(settings.overlayCalloutOpacity).toBe(1);
+    expect(settings.overlayChromeOpacity).toBe(1);
     expect(warn).not.toHaveBeenCalled();
   });
 });
@@ -458,12 +569,7 @@ describe('boolean codec coverage', () => {
   it('covers exactly the boolean settings fields', () => {
     // Completeness direction of the satisfies-pin in settings-repository.ts.
     expectTypeOf<BooleanSettingsField>().toEqualTypeOf<
-      | 'autostart'
-      | 'closeToTray'
-      | 'autoUpdate'
-      | 'scoreboardEnabled'
-      | 'overlayMapExempt'
-      | 'overlayScoreboardExempt'
+      'autostart' | 'closeToTray' | 'autoUpdate' | 'scoreboardEnabled'
     >();
   });
 });

@@ -23,11 +23,11 @@ describe('OverlayChrome', () => {
     expect(bar).toHaveTextContent('TactiCS Overlay');
   });
 
-  it('fades with the base region variable', () => {
+  it('fades with the chrome region variable (ADR-060)', () => {
     render(<OverlayChrome />);
 
     expect(screen.getByTestId('overlay-chrome')).toHaveStyle({
-      opacity: 'var(--fade-base)',
+      opacity: 'var(--fade-chrome)',
     });
   });
 

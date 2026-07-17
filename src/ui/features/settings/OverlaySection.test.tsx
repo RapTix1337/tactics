@@ -19,9 +19,10 @@ const storedSettings: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
   gsiTiming: 'default',
-  overlayOpacity: 1,
-  overlayMapExempt: false,
-  overlayScoreboardExempt: false,
+  overlayScoreboardOpacity: 1,
+  overlayMapOpacity: 1,
+  overlayCalloutOpacity: 1,
+  overlayChromeOpacity: 1,
 };
 
 describe('OverlaySection', () => {
@@ -30,13 +31,15 @@ describe('OverlaySection', () => {
     useSettingsStore.setState({ settings: storedSettings });
   });
 
-  it('renders the heading and the shared overlay controls', () => {
+  it('renders the heading and the shared four-slider overlay controls (ADR-060)', () => {
     render(<OverlaySection />);
 
     expect(screen.getByRole('heading', { name: 'Overlay' })).toBeInTheDocument();
-    expect(screen.getByRole('slider', { name: 'Overlay opacity' })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: 'Map always opaque' })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: 'Scoreboard always opaque' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Scoreboard opacity' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Map opacity' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Callouts opacity' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Title bar & status opacity' })).toBeInTheDocument();
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
   });
 
   it('shows a loading state until the settings snapshot arrives', () => {

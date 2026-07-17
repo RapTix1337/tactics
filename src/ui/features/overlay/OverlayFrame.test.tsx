@@ -26,9 +26,10 @@ const settingsWithScoreboard: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: SAMPLE_SCOREBOARD_LAYOUT,
   gsiTiming: 'default',
-  overlayOpacity: 0.5,
-  overlayMapExempt: false,
-  overlayScoreboardExempt: false,
+  overlayScoreboardOpacity: 0.5,
+  overlayMapOpacity: 0.5,
+  overlayCalloutOpacity: 0.5,
+  overlayChromeOpacity: 0.5,
 };
 
 function renderFrame(onActiveChange = vi.fn()): ReturnType<typeof render> {
@@ -54,17 +55,23 @@ describe('OverlayFrame', () => {
     expect(screen.getByTestId('overlay-enemy-card')).toHaveStyle({
       opacity: 'var(--fade-scoreboard)',
     });
-    // …the map cell its own — as siblings, so exemptions can exceed the rest.
-    expect(screen.getByTestId('overlay-map-cell')).toHaveStyle({ opacity: 'var(--fade-map)' });
+    // …the map cell carries neither a fade nor a panel (ADR-060): the image
+    // and callout fades live inside MapView, the picture floats bare.
+    const mapCell = screen.getByTestId('overlay-map-cell');
+    expect(mapCell.style.opacity).toBe('');
+    expect(mapCell.className).not.toMatch(/bg-background/);
+    expect(mapCell.className).not.toMatch(/\bborder\b/);
     expect(screen.getByTestId('overlay-map-view')).toHaveTextContent('de_dust2');
   });
 
-  it('renders only the faded map cell while the scoreboard slice is inactive', () => {
+  it('renders only the bare map cell while the scoreboard slice is inactive', () => {
     useScoreboardStore.setState({ scoreboard: { active: false } });
 
     renderFrame();
 
-    expect(screen.getByTestId('overlay-map-cell')).toHaveStyle({ opacity: 'var(--fade-map)' });
+    const mapCell = screen.getByTestId('overlay-map-cell');
+    expect(mapCell.style.opacity).toBe('');
+    expect(mapCell.className).not.toMatch(/bg-background/);
     expect(screen.getByTestId('overlay-map-view')).toHaveTextContent('de_dust2');
     expect(screen.queryByTestId('overlay-score-header')).not.toBeInTheDocument();
     expect(screen.queryByTestId('overlay-my-card')).not.toBeInTheDocument();

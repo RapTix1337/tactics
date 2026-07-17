@@ -42,9 +42,10 @@ export const SETTINGS_DEFAULTS: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: DEFAULT_SCOREBOARD_LAYOUT,
   gsiTiming: 'default',
-  overlayOpacity: 1,
-  overlayMapExempt: false,
-  overlayScoreboardExempt: false,
+  overlayScoreboardOpacity: 1,
+  overlayMapOpacity: 1,
+  overlayCalloutOpacity: 1,
+  overlayChromeOpacity: 1,
 };
 
 export interface ParsedSettings {

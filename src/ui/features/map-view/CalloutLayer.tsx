@@ -151,7 +151,15 @@ export function CalloutLayer({
     <ul
       aria-label="Callouts"
       className="pointer-events-none absolute m-0 list-none p-0"
-      style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}
+      style={{
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+        // Overlay-owned fade (ADR-060), fallback 1 outside the overlay; a
+        // sibling of the image on purpose — see MapView's fade note.
+        opacity: 'var(--fade-callouts, 1)',
+      }}
     >
       {editing !== undefined ? (
         <>

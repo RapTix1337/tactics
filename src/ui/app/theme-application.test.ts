@@ -15,9 +15,10 @@ function makeSettings(theme: Theme): Settings {
     scoreboardEnabled: true,
     scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
     gsiTiming: 'default',
-    overlayOpacity: 1,
-    overlayMapExempt: false,
-    overlayScoreboardExempt: false,
+    overlayScoreboardOpacity: 1,
+    overlayMapOpacity: 1,
+    overlayCalloutOpacity: 1,
+    overlayChromeOpacity: 1,
   };
 }
 

@@ -7,17 +7,17 @@ import { closeOverlay } from '../../lib/ipc/overlay';
 /**
  * The overlay's slim window chrome (live-overlay 02-design.md §5.3): a
  * draggable title bar — the frameless window's only move handle — with the
- * ✕ excluded from the drag region so it stays clickable. Part of the base
- * fade region; at 0 % it turns invisible but keeps working (design §6
- * case 5, accepted). The `app-region-*` classes live in overlay.css:
- * `-webkit-app-region` is not part of React's CSSProperties.
+ * ✕ excluded from the drag region so it stays clickable. Part of the chrome
+ * fade region (ADR-060); at 0 % it turns invisible but keeps working
+ * (design §6 case 5, accepted). The `app-region-*` classes live in
+ * overlay.css: `-webkit-app-region` is not part of React's CSSProperties.
  */
 export function OverlayChrome(): JSX.Element {
   return (
     <header
       data-testid="overlay-chrome"
       className="app-region-drag flex shrink-0 items-center justify-between rounded-md bg-background/80 px-3 py-1"
-      style={{ opacity: 'var(--fade-base)' }}
+      style={{ opacity: 'var(--fade-chrome)' }}
     >
       <span className="text-xs font-medium text-muted-foreground">TactiCS Overlay</span>
       <Button

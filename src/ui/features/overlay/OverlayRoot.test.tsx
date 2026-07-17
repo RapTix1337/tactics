@@ -43,9 +43,10 @@ const baseSettings: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: SAMPLE_SCOREBOARD_LAYOUT,
   gsiTiming: 'default',
-  overlayOpacity: 0.4,
-  overlayMapExempt: false,
-  overlayScoreboardExempt: false,
+  overlayScoreboardOpacity: 0.4,
+  overlayMapOpacity: 0.6,
+  overlayCalloutOpacity: 0.2,
+  overlayChromeOpacity: 0.8,
 };
 
 const liveOnDust2: GameState = {
@@ -57,12 +58,13 @@ function setSettings(overrides: Partial<Settings>): void {
   useSettingsStore.setState({ settings: { ...baseSettings, ...overrides } });
 }
 
-function fadeVariables(): { base: string; map: string; scoreboard: string } {
+function fadeVariables(): { scoreboard: string; map: string; callouts: string; chrome: string } {
   const root = screen.getByTestId('overlay-root');
   return {
-    base: root.style.getPropertyValue('--fade-base'),
-    map: root.style.getPropertyValue('--fade-map'),
     scoreboard: root.style.getPropertyValue('--fade-scoreboard'),
+    map: root.style.getPropertyValue('--fade-map'),
+    callouts: root.style.getPropertyValue('--fade-callouts'),
+    chrome: root.style.getPropertyValue('--fade-chrome'),
   };
 }
 
@@ -130,54 +132,53 @@ describe('OverlayRoot', () => {
     });
   });
 
-  describe('fade variables (spec AC 4/5)', () => {
-    it('feeds the slider value to all three regions without exemptions', () => {
+  describe('fade variables (spec AC 4/5, ADR-060)', () => {
+    it('feeds each slider value to exactly its own variable — no coupling', () => {
       render(<OverlayRoot />);
 
-      expect(fadeVariables()).toEqual({ base: '0.4', map: '0.4', scoreboard: '0.4' });
+      expect(fadeVariables()).toEqual({
+        scoreboard: '0.4',
+        map: '0.6',
+        callouts: '0.2',
+        chrome: '0.8',
+      });
     });
 
-    it('pins the map region to 1 while the others follow the slider', () => {
-      setSettings({ overlayMapExempt: true });
-
-      render(<OverlayRoot />);
-
-      expect(fadeVariables()).toEqual({ base: '0.4', map: '1', scoreboard: '0.4' });
-    });
-
-    it('pins the scoreboard region to 1 while the others follow the slider', () => {
-      setSettings({ overlayScoreboardExempt: true });
+    it('moves one slider without touching the other three', () => {
+      setSettings({ overlayMapOpacity: 0 });
 
       render(<OverlayRoot />);
 
-      expect(fadeVariables()).toEqual({ base: '0.4', map: '0.4', scoreboard: '1' });
+      expect(fadeVariables()).toEqual({
+        scoreboard: '0.4',
+        map: '0',
+        callouts: '0.2',
+        chrome: '0.8',
+      });
     });
 
-    it('pins both exempted regions at once', () => {
-      setSettings({ overlayMapExempt: true, overlayScoreboardExempt: true });
-
-      render(<OverlayRoot />);
-
-      expect(fadeVariables()).toEqual({ base: '0.4', map: '1', scoreboard: '1' });
-    });
-
-    it('defaults every region to 1 before the settings snapshot arrives', () => {
+    it('defaults every variable to 1 before the settings snapshot arrives', () => {
       useSettingsStore.setState({ settings: undefined });
 
       render(<OverlayRoot />);
 
-      expect(fadeVariables()).toEqual({ base: '1', map: '1', scoreboard: '1' });
+      expect(fadeVariables()).toEqual({ scoreboard: '1', map: '1', callouts: '1', chrome: '1' });
     });
 
     it('applies settings changes live via the settings mirror (evt:settings.changed)', () => {
       render(<OverlayRoot />);
-      expect(fadeVariables().base).toBe('0.4');
+      expect(fadeVariables().chrome).toBe('0.8');
 
       act(() => {
-        setSettings({ overlayOpacity: 0.8, overlayMapExempt: true });
+        setSettings({ overlayChromeOpacity: 0.1, overlayCalloutOpacity: 1 });
       });
 
-      expect(fadeVariables()).toEqual({ base: '0.8', map: '1', scoreboard: '0.8' });
+      expect(fadeVariables()).toEqual({
+        scoreboard: '0.4',
+        map: '0.6',
+        callouts: '1',
+        chrome: '0.1',
+      });
     });
   });
 
@@ -192,11 +193,11 @@ describe('OverlayRoot', () => {
   });
 
   describe('slot fade hand-over (sibling-region invariant)', () => {
-    it('fades the content slot with the base variable while a fallback state shows', () => {
+    it('fades the content slot with the chrome variable while a fallback state shows', () => {
       render(<OverlayRoot />);
 
       expect(screen.getByTestId('overlay-content')).toHaveStyle({
-        opacity: 'var(--fade-base)',
+        opacity: 'var(--fade-chrome)',
       });
     });
 
@@ -221,7 +222,7 @@ describe('OverlayRoot', () => {
       });
 
       expect(screen.getByTestId('overlay-content')).toHaveStyle({
-        opacity: 'var(--fade-base)',
+        opacity: 'var(--fade-chrome)',
       });
     });
   });

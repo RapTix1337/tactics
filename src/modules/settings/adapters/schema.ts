@@ -31,9 +31,10 @@ export const settingsTable = sqliteTable('settings', {
   scoreboardEnabled: integer('scoreboard_enabled').notNull().default(1),
   scoreboardLayout: text('scoreboard_layout').notNull().default(SCOREBOARD_LAYOUT_COLUMN_DEFAULT),
   gsiTiming: text('gsi_timing').notNull().default('default'),
-  overlayOpacity: real('overlay_opacity').notNull().default(1),
-  overlayMapExempt: integer('overlay_map_exempt').notNull().default(0),
-  overlayScoreboardExempt: integer('overlay_scoreboard_exempt').notNull().default(0),
+  overlayScoreboardOpacity: real('overlay_scoreboard_opacity').notNull().default(1),
+  overlayMapOpacity: real('overlay_map_opacity').notNull().default(1),
+  overlayCalloutOpacity: real('overlay_callout_opacity').notNull().default(1),
+  overlayChromeOpacity: real('overlay_chrome_opacity').notNull().default(1),
 });
 
 /**

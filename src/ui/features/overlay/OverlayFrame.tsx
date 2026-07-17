@@ -41,16 +41,14 @@ export function OverlayFrame({ mapId, onActiveChange }: OverlayFrameProps): JSX.
     };
   }, [onActiveChange]);
 
-  // The window surface is transparent (02-design.md §5.1), so background-free
-  // regions (score header, map cell) get their opaque panel here — the cards
-  // bring their own `bg-card`. Fading a region fades its panel with it.
+  // The window surface is transparent (02-design.md §5.1): the score header
+  // gets its opaque panel here, the cards bring their own `bg-card` — but
+  // the map cell is deliberately bare (ADR-060): the picture floats on the
+  // transparent surface, and its image/callout fades live inside `MapView`
+  // (`var(--fade-map, 1)` / `var(--fade-callouts, 1)`), never on the cell.
   if (scoreboard?.active !== true || settings?.scoreboardEnabled !== true) {
     return (
-      <div
-        data-testid="overlay-map-cell"
-        className="h-full rounded-md border bg-background"
-        style={MAP_FADE}
-      >
+      <div data-testid="overlay-map-cell" className="h-full">
         <MapView mapId={mapId} />
       </div>
     );
@@ -72,11 +70,7 @@ export function OverlayFrame({ mapId, onActiveChange }: OverlayFrameProps): JSX.
         >
           <MyPerformanceCard layout={settings.scoreboardLayout} state={scoreboard} />
         </div>
-        <div
-          data-testid="overlay-map-cell"
-          className="min-h-0 min-w-0 flex-1 rounded-md border bg-background"
-          style={MAP_FADE}
-        >
+        <div data-testid="overlay-map-cell" className="min-h-0 min-w-0 flex-1">
           <MapView mapId={mapId} />
         </div>
         <div
@@ -91,5 +85,4 @@ export function OverlayFrame({ mapId, onActiveChange }: OverlayFrameProps): JSX.
   );
 }
 
-const MAP_FADE = { opacity: 'var(--fade-map)' } as const;
 const SCOREBOARD_FADE = { opacity: 'var(--fade-scoreboard)' } as const;

@@ -686,4 +686,53 @@ describe('MapView', () => {
       'This map profile is no longer available.',
     );
   });
+
+  describe('per-element overlay fades (OVL.12, ADR-060)', () => {
+    // The fades reference overlay-owned CSS variables with fallback 1: the
+    // main window defines none of them, so it renders at full opacity with
+    // zero overlay knowledge; the overlay root sets them per slider.
+    it('fades the image and the callout layer through their own variables (siblings)', async () => {
+      installBridge(vi.fn().mockResolvedValue({ ok: true, data: profileDetails }));
+      render(<MapView mapId="de_dust2" />);
+      const image = await screen.findByTestId('map-view-image');
+      stubImageLayout(image);
+      await loadImageUntilMeasured(image, () => {
+        expect(screen.getByRole('list', { name: 'Callouts' })).toBeInTheDocument();
+      });
+
+      expect(image).toHaveStyle({ opacity: 'var(--fade-map, 1)' });
+      expect(screen.getByRole('list', { name: 'Callouts' })).toHaveStyle({
+        opacity: 'var(--fade-callouts, 1)',
+      });
+      // Never on the shared transform wrapper: a faded ancestor would cap
+      // both layers (CSS child opacity cannot exceed its parent's).
+      expect(screen.getByTestId('map-view-transform').style.opacity).toBe('');
+    });
+
+    it('marks the loading state as a chrome-faded transient panel', () => {
+      const pending = deferred<CommandResult<MapProfileDetails>>();
+      installBridge(vi.fn().mockReturnValue(pending.promise));
+
+      render(<MapView mapId="de_dust2" />);
+
+      const loading = screen.getByRole('status');
+      expect(loading).toHaveClass('map-transient-panel');
+      expect(loading).toHaveStyle({ opacity: 'var(--fade-chrome, 1)' });
+    });
+
+    it('marks the error state as a chrome-faded transient panel', async () => {
+      installBridge(
+        vi.fn().mockResolvedValue({
+          ok: false,
+          error: { code: 'PROFILE_NOT_FOUND', message: 'Map "de_dust2" has no profiles yet.' },
+        }),
+      );
+
+      render(<MapView mapId="de_dust2" />);
+
+      const alert = await screen.findByRole('alert');
+      expect(alert).toHaveClass('map-transient-panel');
+      expect(alert).toHaveStyle({ opacity: 'var(--fade-chrome, 1)' });
+    });
+  });
 });

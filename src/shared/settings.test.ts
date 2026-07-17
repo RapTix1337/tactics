@@ -28,9 +28,10 @@ const validSettings: Settings = {
   scoreboardEnabled: false,
   scoreboardLayout: validLayout,
   gsiTiming: 'fast',
-  overlayOpacity: 0.75,
-  overlayMapExempt: true,
-  overlayScoreboardExempt: false,
+  overlayScoreboardOpacity: 0.75,
+  overlayMapOpacity: 0.5,
+  overlayCalloutOpacity: 0.25,
+  overlayChromeOpacity: 0,
 };
 
 describe('settingsSchema', () => {
@@ -53,24 +54,35 @@ describe('settingsSchema', () => {
     expectTypeOf<SettingsUpdate>().toExtend<Partial<Settings>>();
   });
 
-  it('bounds the overlay opacity to 0–1 inclusive (ADR-058: no floor)', () => {
-    const schema = SETTINGS_FIELD_SCHEMAS.overlayOpacity;
-    expect(schema.safeParse(0).success).toBe(true);
-    expect(schema.safeParse(1).success).toBe(true);
-    expect(schema.safeParse(0.35).success).toBe(true);
-    expect(schema.safeParse(-0.01).success).toBe(false);
-    expect(schema.safeParse(1.01).success).toBe(false);
-    expect(schema.safeParse('0.5').success).toBe(false);
+  it('bounds every per-element overlay opacity to 0–1 inclusive (ADR-060: no floor)', () => {
+    for (const field of [
+      'overlayScoreboardOpacity',
+      'overlayMapOpacity',
+      'overlayCalloutOpacity',
+      'overlayChromeOpacity',
+    ] as const) {
+      const schema = SETTINGS_FIELD_SCHEMAS[field];
+      expect(schema.safeParse(0).success).toBe(true);
+      expect(schema.safeParse(1).success).toBe(true);
+      expect(schema.safeParse(0.35).success).toBe(true);
+      expect(schema.safeParse(-0.01).success).toBe(false);
+      expect(schema.safeParse(1.01).success).toBe(false);
+      expect(schema.safeParse('0.5').success).toBe(false);
+    }
   });
 
-  it('keeps the overlay exemptions strict booleans', () => {
-    for (const field of ['overlayMapExempt', 'overlayScoreboardExempt'] as const) {
-      const schema = SETTINGS_FIELD_SCHEMAS[field];
-      expect(schema.safeParse(true).success).toBe(true);
-      expect(schema.safeParse(false).success).toBe(true);
-      expect(schema.safeParse(1).success).toBe(false);
-      expect(schema.safeParse('true').success).toBe(false);
-    }
+  it('has no trace of the pre-ADR-060 fade fields', () => {
+    expect(SETTINGS_FIELDS).not.toContain('overlayOpacity');
+    expect(SETTINGS_FIELDS).not.toContain('overlayMapExempt');
+    expect(SETTINGS_FIELDS).not.toContain('overlayScoreboardExempt');
+    expect(
+      settingsSchema.safeParse({ ...validSettings, overlayOpacity: 0.5 }).success,
+      // Unknown keys are stripped, not rejected — the object still parses,
+      // but the parsed result must not carry the legacy key.
+    ).toBe(true);
+    expect(settingsSchema.parse({ ...validSettings, overlayOpacity: 0.5 })).not.toHaveProperty(
+      'overlayOpacity',
+    );
   });
 });
 

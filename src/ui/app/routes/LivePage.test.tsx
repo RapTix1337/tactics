@@ -66,9 +66,10 @@ const storedSettings: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
   gsiTiming: 'default',
-  overlayOpacity: 1,
-  overlayMapExempt: false,
-  overlayScoreboardExempt: false,
+  overlayScoreboardOpacity: 1,
+  overlayMapOpacity: 1,
+  overlayCalloutOpacity: 1,
+  overlayChromeOpacity: 1,
 };
 
 // The upload hint renders a router link, so the page needs a routing
@@ -375,8 +376,12 @@ describe('LivePage', () => {
 
       expect(await screen.findByText('Shown in overlay')).toBeInTheDocument();
       expect(screen.queryByTestId('live-map-view')).not.toBeInTheDocument();
-      expect(screen.getByRole('slider', { name: 'Overlay opacity' })).toBeInTheDocument();
-      expect(screen.getByRole('switch', { name: 'Map always opaque' })).toBeInTheDocument();
+      expect(screen.getByRole('slider', { name: 'Scoreboard opacity' })).toBeInTheDocument();
+      expect(screen.getByRole('slider', { name: 'Map opacity' })).toBeInTheDocument();
+      expect(screen.getByRole('slider', { name: 'Callouts opacity' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('slider', { name: 'Title bar & status opacity' }),
+      ).toBeInTheDocument();
       // The stable E2E selector survives the swap (E5.4).
       expect(screen.getByTestId('ipc-status')).toBeInTheDocument();
     });

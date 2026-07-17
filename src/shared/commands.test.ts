@@ -47,9 +47,10 @@ const validSettings: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
   gsiTiming: 'default',
-  overlayOpacity: 1,
-  overlayMapExempt: false,
-  overlayScoreboardExempt: false,
+  overlayScoreboardOpacity: 1,
+  overlayMapOpacity: 1,
+  overlayCalloutOpacity: 1,
+  overlayChromeOpacity: 1,
 };
 
 describe('appGetSnapshot', () => {
@@ -108,12 +109,14 @@ describe('settingsUpdate', () => {
         gsiTiming: 'fast',
       }).success,
     ).toBe(true);
-    // The overlay fields ride it too — the ADR-053 precedent (ADR-058, OVL.1).
+    // The overlay fields ride it too — the ADR-053 precedent (ADR-058,
+    // four per-element fades since ADR-060).
     expect(
       requestSchema.safeParse({
-        overlayOpacity: 0.5,
-        overlayMapExempt: true,
-        overlayScoreboardExempt: true,
+        overlayScoreboardOpacity: 0.5,
+        overlayMapOpacity: 0.25,
+        overlayCalloutOpacity: 0,
+        overlayChromeOpacity: 1,
       }).success,
     ).toBe(true);
   });
@@ -131,10 +134,10 @@ describe('settingsUpdate', () => {
     expect(requestSchema.safeParse({ autostart: 'yes' }).success).toBe(false);
     expect(requestSchema.safeParse({ gsiTiming: 'turbo' }).success).toBe(false);
     expect(requestSchema.safeParse({ scoreboardLayout: { groups: [] } }).success).toBe(false);
-    expect(requestSchema.safeParse({ overlayOpacity: 1.5 }).success).toBe(false);
-    expect(requestSchema.safeParse({ overlayOpacity: -0.1 }).success).toBe(false);
-    expect(requestSchema.safeParse({ overlayMapExempt: 'yes' }).success).toBe(false);
-    expect(requestSchema.safeParse({ overlayScoreboardExempt: 1 }).success).toBe(false);
+    expect(requestSchema.safeParse({ overlayScoreboardOpacity: 1.5 }).success).toBe(false);
+    expect(requestSchema.safeParse({ overlayMapOpacity: -0.1 }).success).toBe(false);
+    expect(requestSchema.safeParse({ overlayCalloutOpacity: '0.5' }).success).toBe(false);
+    expect(requestSchema.safeParse({ overlayChromeOpacity: true }).success).toBe(false);
   });
 
   it('responds with the full new settings state', () => {

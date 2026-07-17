@@ -19,6 +19,20 @@ import { useZoomPan } from './use-zoom-pan';
  * not a click — the editor only adds callouts on clicks. */
 const CLICK_MOVE_TOLERANCE_PX = 4;
 
+/**
+ * Overlay-owned fade hooks (OVL.12, ADR-060): the variables are set only by
+ * the overlay root, so the fallback 1 keeps every other mount at full
+ * opacity with zero overlay knowledge. Image and callout layer are siblings
+ * inside the transform wrapper — the fade must never move onto the wrapper,
+ * or one faded ancestor caps both layers (CSS child opacity cannot exceed
+ * its parent's). The transient states (loading/error) fade with the
+ * overlay's chrome; their `map-transient-panel` class is styled only by
+ * overlay.css (a readable panel on the transparent surface) and is inert in
+ * the main window.
+ */
+const MAP_FADE = { opacity: 'var(--fade-map, 1)' } as const;
+const CHROME_FADE = { opacity: 'var(--fade-chrome, 1)' } as const;
+
 interface MapViewProps {
   readonly mapId: string;
   /** Explicit profile to show (E22.5 switcher); omitted = the map's default. */
@@ -90,7 +104,11 @@ export function MapView({ mapId, profileId, editable = false }: MapViewProps): J
 
   if (outcome === undefined) {
     return (
-      <p role="status" className="flex h-full items-center justify-center text-muted-foreground">
+      <p
+        role="status"
+        className="map-transient-panel flex h-full items-center justify-center text-muted-foreground"
+        style={CHROME_FADE}
+      >
         Loading map…
       </p>
     );
@@ -276,6 +294,7 @@ function MapCanvas({ profile, editable, onImageError }: MapCanvasProps): JSX.Ele
             alt={`Map image (profile "${profile.name}")`}
             draggable={false}
             className="max-h-full max-w-full object-contain"
+            style={MAP_FADE}
             onError={onImageError}
           />
           <CalloutLayer
@@ -411,7 +430,8 @@ function MapViewError({ message }: MapViewErrorProps): JSX.Element {
   return (
     <div
       role="alert"
-      className="flex h-full flex-col items-center justify-center gap-1 p-4 text-center"
+      className="map-transient-panel flex h-full flex-col items-center justify-center gap-1 p-4 text-center"
+      style={CHROME_FADE}
     >
       <p className="font-medium">Cannot show this map</p>
       <p className="text-sm text-muted-foreground">{message}</p>

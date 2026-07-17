@@ -4,7 +4,12 @@ import type { MenuItem } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { TrayMenuActions } from './tray';
-import { buildTrayMenuTemplate, resolveAppIconPath, resolveWindowsClosedAction } from './tray';
+import {
+  buildTrayMenuTemplate,
+  OVERLAY_OPACITY_RESET,
+  resolveAppIconPath,
+  resolveWindowsClosedAction,
+} from './tray';
 
 // E17.1 risk note: tray behaviors are hard to unit-test — the pure pieces
 // (setting → close decision, menu template) are covered here; the running
@@ -49,6 +54,15 @@ describe('buildTrayMenuTemplate', () => {
     const item = template.find((candidate) => candidate.label === label);
     item?.click?.({} as MenuItem, undefined, {});
     expect(actions[action]).toHaveBeenCalledTimes(1);
+  });
+
+  it('resets exactly the four per-element opacities to 1 (ADR-060)', () => {
+    expect(OVERLAY_OPACITY_RESET).toEqual({
+      overlayScoreboardOpacity: 1,
+      overlayMapOpacity: 1,
+      overlayCalloutOpacity: 1,
+      overlayChromeOpacity: 1,
+    });
   });
 });
 

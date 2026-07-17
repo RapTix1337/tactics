@@ -20,9 +20,10 @@ const storedSettings: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
   gsiTiming: 'default',
-  overlayOpacity: 0.7,
-  overlayMapExempt: false,
-  overlayScoreboardExempt: true,
+  overlayScoreboardOpacity: 0.7,
+  overlayMapOpacity: 0.5,
+  overlayCalloutOpacity: 0.25,
+  overlayChromeOpacity: 0.4,
 };
 
 describe('OverlayControls', () => {
@@ -35,63 +36,63 @@ describe('OverlayControls', () => {
     useSettingsStore.setState({ settings: undefined });
     render(<OverlayControls />);
 
-    expect(screen.queryByRole('slider', { name: 'Overlay opacity' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(screen.queryByRole('slider')).not.toBeInTheDocument();
   });
 
-  it('shows the persisted opacity as a percentage', () => {
+  it('shows one percent slider per element and no switches (ADR-060)', () => {
     render(<OverlayControls />);
 
-    expect(screen.getByRole('slider', { name: 'Overlay opacity' })).toHaveAttribute(
+    expect(screen.getAllByRole('slider')).toHaveLength(4);
+    expect(screen.getByRole('slider', { name: 'Scoreboard opacity' })).toHaveAttribute(
       'aria-valuenow',
       '70',
     );
+    expect(screen.getByRole('slider', { name: 'Map opacity' })).toHaveAttribute(
+      'aria-valuenow',
+      '50',
+    );
+    expect(screen.getByRole('slider', { name: 'Callouts opacity' })).toHaveAttribute(
+      'aria-valuenow',
+      '25',
+    );
+    expect(screen.getByRole('slider', { name: 'Title bar & status opacity' })).toHaveAttribute(
+      'aria-valuenow',
+      '40',
+    );
     expect(screen.getByText('70 %')).toBeInTheDocument();
+    expect(screen.getByText('50 %')).toBeInTheDocument();
+    expect(screen.getByText('25 %')).toBeInTheDocument();
+    expect(screen.getByText('40 %')).toBeInTheDocument();
+    // The exemption switches are gone — a switch is a slider pinned to 100 %.
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
   });
 
-  it('dispatches settings.update with the 0–1 opacity on a keyboard step (spec AC 4)', async () => {
-    const user = userEvent.setup();
-    render(<OverlayControls />);
+  it.each([
+    ['Scoreboard opacity', { overlayScoreboardOpacity: 0.71 }],
+    ['Map opacity', { overlayMapOpacity: 0.51 }],
+    ['Callouts opacity', { overlayCalloutOpacity: 0.26 }],
+    ['Title bar & status opacity', { overlayChromeOpacity: 0.41 }],
+  ] as const)(
+    'dispatches exactly its own field from the %s slider on a keyboard step (spec AC 4)',
+    async (name, payload) => {
+      const user = userEvent.setup();
+      render(<OverlayControls />);
 
-    const slider = screen.getByRole('slider', { name: 'Overlay opacity' });
-    slider.focus();
-    await user.keyboard('{ArrowRight}');
+      const slider = screen.getByRole('slider', { name });
+      slider.focus();
+      await user.keyboard('{ArrowRight}');
 
-    // Timing-free contract: the commit always flushes, and the jsdom rAF
-    // (a 16 ms timer) may or may not fire between key-down and key-up —
-    // one or two dispatches are both correct, every payload must be the
-    // stepped value, and more than two would mean broken coalescing.
-    const calls = vi.mocked(updateSettings).mock.calls;
-    expect(calls.length).toBeGreaterThanOrEqual(1);
-    expect(calls.length).toBeLessThanOrEqual(2);
-    for (const call of calls) {
-      expect(call[0]).toEqual({ overlayOpacity: 0.71 });
-    }
-  });
-
-  it('dispatches the map exemption switch (spec AC 5)', async () => {
-    const user = userEvent.setup();
-    render(<OverlayControls />);
-
-    const mapSwitch = screen.getByRole('switch', { name: 'Map always opaque' });
-    expect(mapSwitch).not.toBeChecked();
-
-    await user.click(mapSwitch);
-
-    expect(updateSettings).toHaveBeenCalledWith({ overlayMapExempt: true });
-    // No optimistic UI (ADR-033): the switch follows evt:settings.changed.
-    expect(mapSwitch).not.toBeChecked();
-  });
-
-  it('dispatches the scoreboard exemption switch (spec AC 5)', async () => {
-    const user = userEvent.setup();
-    render(<OverlayControls />);
-
-    const scoreboardSwitch = screen.getByRole('switch', { name: 'Scoreboard always opaque' });
-    expect(scoreboardSwitch).toBeChecked();
-
-    await user.click(scoreboardSwitch);
-
-    expect(updateSettings).toHaveBeenCalledWith({ overlayScoreboardExempt: false });
-  });
+      // Timing-free contract (the OVL.9 pattern): the commit always flushes,
+      // and the jsdom rAF (a 16 ms timer) may or may not fire between
+      // key-down and key-up — one or two dispatches are both correct, every
+      // payload must be the stepped value of this slider's field alone, and
+      // more than two would mean broken coalescing.
+      const calls = vi.mocked(updateSettings).mock.calls;
+      expect(calls.length).toBeGreaterThanOrEqual(1);
+      expect(calls.length).toBeLessThanOrEqual(2);
+      for (const call of calls) {
+        expect(call[0]).toEqual(payload);
+      }
+    },
+  );
 });

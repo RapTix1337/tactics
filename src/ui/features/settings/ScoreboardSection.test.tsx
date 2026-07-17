@@ -23,9 +23,10 @@ const storedSettings: Settings = {
     ],
   },
   gsiTiming: 'default',
-  overlayOpacity: 1,
-  overlayMapExempt: false,
-  overlayScoreboardExempt: false,
+  overlayScoreboardOpacity: 1,
+  overlayMapOpacity: 1,
+  overlayCalloutOpacity: 1,
+  overlayChromeOpacity: 1,
 };
 
 type Invoke = (command: string, input: unknown) => Promise<CommandResult<unknown>>;

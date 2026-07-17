@@ -122,17 +122,23 @@ describe('registerSettingsCommands', () => {
     expect(getPersisted()).toEqual(expected);
   });
 
-  it('round-trips the overlay fields and publishes them (OVL.2, ADR-058)', async () => {
+  it('round-trips the overlay fade fields and publishes them (OVL.2, ADR-060)', async () => {
     const { invoke, published, getPersisted } = setup();
 
     const expected = {
       ...SETTINGS_DEFAULTS,
-      overlayOpacity: 0.6,
-      overlayMapExempt: true,
-      overlayScoreboardExempt: true,
+      overlayScoreboardOpacity: 0.6,
+      overlayMapOpacity: 0.4,
+      overlayCalloutOpacity: 0.2,
+      overlayChromeOpacity: 0,
     };
     await expect(
-      invoke({ overlayOpacity: 0.6, overlayMapExempt: true, overlayScoreboardExempt: true }),
+      invoke({
+        overlayScoreboardOpacity: 0.6,
+        overlayMapOpacity: 0.4,
+        overlayCalloutOpacity: 0.2,
+        overlayChromeOpacity: 0,
+      }),
     ).resolves.toEqual({ ok: true, data: expected });
 
     expect(published).toEqual([{ channel: settingsChanged.channel, payload: expected }]);

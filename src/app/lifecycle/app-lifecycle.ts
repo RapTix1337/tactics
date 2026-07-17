@@ -70,7 +70,12 @@ import { createMapImageProtocolHandler, MAP_IMAGE_PROTOCOL_SCHEME } from './map-
 import { createOverlayWindowManager } from './overlay-window';
 import { buildOverlayWindowOptions } from './overlay-window-options';
 import { DEV_CONTENT_SECURITY_POLICY, shouldAllowNavigation } from './security-policy';
-import { buildTrayMenuTemplate, resolveAppIconPath, resolveWindowsClosedAction } from './tray';
+import {
+  buildTrayMenuTemplate,
+  OVERLAY_OPACITY_RESET,
+  resolveAppIconPath,
+  resolveWindowsClosedAction,
+} from './tray';
 import { createWindowBoundsTracker, planBoundsRestore } from './window-bounds';
 
 /**
@@ -559,7 +564,7 @@ export function startApp(): void {
             // Best-effort like the bounds tracker: a failing write from a
             // tray click is logged, never thrown into Electron's menu code.
             try {
-              eventPublisher.publish(settingsChanged, applySettingsUpdate({ overlayOpacity: 1 }));
+              eventPublisher.publish(settingsChanged, applySettingsUpdate(OVERLAY_OPACITY_RESET));
             } catch (error) {
               logger.warn('Resetting the overlay opacity failed', {
                 error: describeError(error),

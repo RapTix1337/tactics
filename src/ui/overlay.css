@@ -20,3 +20,16 @@ body {
 .app-region-no-drag {
   -webkit-app-region: no-drag;
 }
+
+/* Readable panel behind MapView's transient states (loading/error) on the
+   transparent surface (OVL.12, ADR-060): the map cell itself is bare — the
+   picture floats — so only these states bring a small panel. The class is
+   overlay-only by construction: this stylesheet never loads in the main
+   window, where the framed cell already provides a background. */
+
+.map-transient-panel {
+  border: 1px solid var(--border);
+  /* = Tailwind's rounded-md; --radius-md itself is @theme-inline-only. */
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--background);
+}

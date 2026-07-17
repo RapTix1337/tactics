@@ -23,9 +23,10 @@ const validStored: Settings = {
   scoreboardEnabled: false,
   scoreboardLayout: storedLayout,
   gsiTiming: 'slow',
-  overlayOpacity: 0.4,
-  overlayMapExempt: true,
-  overlayScoreboardExempt: true,
+  overlayScoreboardOpacity: 0.4,
+  overlayMapOpacity: 0.6,
+  overlayCalloutOpacity: 0.2,
+  overlayChromeOpacity: 0.8,
 };
 
 describe('SETTINGS_DEFAULTS', () => {
@@ -40,9 +41,10 @@ describe('SETTINGS_DEFAULTS', () => {
       scoreboardEnabled: true,
       scoreboardLayout: DEFAULT_SCOREBOARD_LAYOUT,
       gsiTiming: 'default',
-      overlayOpacity: 1,
-      overlayMapExempt: false,
-      overlayScoreboardExempt: false,
+      overlayScoreboardOpacity: 1,
+      overlayMapOpacity: 1,
+      overlayCalloutOpacity: 1,
+      overlayChromeOpacity: 1,
     });
   });
 
@@ -91,11 +93,11 @@ describe('parseSettings', () => {
     ['scoreboardLayout', { groups: [{ label: 'Empty', fields: [] }] }],
     ['gsiTiming', 'turbo'],
     ['gsiTiming', null],
-    ['overlayOpacity', 1.5],
-    ['overlayOpacity', -0.1],
-    ['overlayOpacity', '0.5'],
-    ['overlayMapExempt', 'yes'],
-    ['overlayScoreboardExempt', 2],
+    ['overlayScoreboardOpacity', 1.5],
+    ['overlayScoreboardOpacity', '0.5'],
+    ['overlayMapOpacity', -0.1],
+    ['overlayCalloutOpacity', true],
+    ['overlayChromeOpacity', null],
   ])('falls back only for the invalid field: %s = %j keeps the others', (field, bad) => {
     const { settings, fallbacks } = parseSettings({ ...validStored, [field]: bad });
 
@@ -107,23 +109,30 @@ describe('parseSettings', () => {
   });
 
   it('applies the default silently for an absent field (version skew, not corruption)', () => {
-    // The OVL.1 state: fields exist in the schema before OVL.2 adds their
-    // columns. Absence is the first-run precedent (silent defaults), not a
+    // The OVL.1 state: fields exist in the schema before their columns are
+    // migrated. Absence is the first-run precedent (silent defaults), not a
     // corrupt value — only present-but-invalid values warrant a fallback log.
-    const { overlayOpacity, overlayMapExempt, overlayScoreboardExempt, ...withoutOverlay } =
-      validStored;
-    void overlayOpacity;
-    void overlayMapExempt;
-    void overlayScoreboardExempt;
+    const {
+      overlayScoreboardOpacity,
+      overlayMapOpacity,
+      overlayCalloutOpacity,
+      overlayChromeOpacity,
+      ...withoutOverlay
+    } = validStored;
+    void overlayScoreboardOpacity;
+    void overlayMapOpacity;
+    void overlayCalloutOpacity;
+    void overlayChromeOpacity;
 
     const { settings, fallbacks } = parseSettings(withoutOverlay);
 
     expect(fallbacks).toEqual([]);
     expect(settings).toEqual({
       ...validStored,
-      overlayOpacity: SETTINGS_DEFAULTS.overlayOpacity,
-      overlayMapExempt: SETTINGS_DEFAULTS.overlayMapExempt,
-      overlayScoreboardExempt: SETTINGS_DEFAULTS.overlayScoreboardExempt,
+      overlayScoreboardOpacity: SETTINGS_DEFAULTS.overlayScoreboardOpacity,
+      overlayMapOpacity: SETTINGS_DEFAULTS.overlayMapOpacity,
+      overlayCalloutOpacity: SETTINGS_DEFAULTS.overlayCalloutOpacity,
+      overlayChromeOpacity: SETTINGS_DEFAULTS.overlayChromeOpacity,
     });
   });
 

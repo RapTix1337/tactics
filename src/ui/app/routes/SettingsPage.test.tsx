@@ -21,9 +21,10 @@ const storedSettings: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
   gsiTiming: 'default',
-  overlayOpacity: 1,
-  overlayMapExempt: false,
-  overlayScoreboardExempt: false,
+  overlayScoreboardOpacity: 1,
+  overlayMapOpacity: 1,
+  overlayCalloutOpacity: 1,
+  overlayChromeOpacity: 1,
 };
 
 const readyPlan: GsiSetupPlan = {
@@ -78,10 +79,11 @@ describe('SettingsPage', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Scoreboard builder' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add group' })).toBeInTheDocument();
-    // OVL.9: the overlay section with the shared controls.
-    expect(screen.getByRole('slider', { name: 'Overlay opacity' })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: 'Map always opaque' })).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: 'Scoreboard always opaque' })).toBeInTheDocument();
+    // OVL.9/OVL.12: the overlay section with the shared four-slider controls.
+    expect(screen.getByRole('slider', { name: 'Scoreboard opacity' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Map opacity' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Callouts opacity' })).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: 'Title bar & status opacity' })).toBeInTheDocument();
     // E16.2: CS2 path and the advanced GSI port.
     expect(await screen.findByText(readyPlan.gameRoot)).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Set port manually' })).toBeInTheDocument();
