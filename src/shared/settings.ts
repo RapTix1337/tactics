@@ -95,7 +95,10 @@ export const scoreboardLayoutSchema = z
     message: 'scoreboard layout needs at least one field',
   });
 
-/** The MVP settings of 01-requirements.md §9 plus the scoreboard fields (ADR-053). */
+/**
+ * The MVP settings of 01-requirements.md §9 plus the scoreboard fields
+ * (ADR-053) and the live-overlay fields (ADR-058, fade model per ADR-060).
+ */
 export interface Settings {
   readonly theme: Theme;
   /** Absolute CS2 install path; `null` = automatic detection via `steam`. */
@@ -108,6 +111,14 @@ export interface Settings {
   readonly scoreboardEnabled: boolean;
   readonly scoreboardLayout: ScoreboardLayout;
   readonly gsiTiming: GsiTiming;
+  /**
+   * Per-element overlay fades, each 0–1 with no floor (ADR-060): one slider,
+   * one layer — no master value, no multiplication.
+   */
+  readonly overlayScoreboardOpacity: number;
+  readonly overlayMapOpacity: number;
+  readonly overlayCalloutOpacity: number;
+  readonly overlayChromeOpacity: number;
 }
 
 export type SettingsField = keyof Settings;
@@ -122,6 +133,10 @@ export const SETTINGS_FIELDS = [
   'scoreboardEnabled',
   'scoreboardLayout',
   'gsiTiming',
+  'overlayScoreboardOpacity',
+  'overlayMapOpacity',
+  'overlayCalloutOpacity',
+  'overlayChromeOpacity',
 ] as const satisfies readonly SettingsField[];
 
 /**
@@ -140,6 +155,10 @@ export const SETTINGS_FIELD_SCHEMAS = {
   scoreboardEnabled: z.boolean(),
   scoreboardLayout: scoreboardLayoutSchema,
   gsiTiming: z.enum(GSI_TIMINGS),
+  overlayScoreboardOpacity: z.number().min(0).max(1),
+  overlayMapOpacity: z.number().min(0).max(1),
+  overlayCalloutOpacity: z.number().min(0).max(1),
+  overlayChromeOpacity: z.number().min(0).max(1),
 } satisfies { [K in SettingsField]: z.ZodType<Settings[K]> };
 
 /** The full settings slice: `settings.update` response, event payload, snapshot slice. */

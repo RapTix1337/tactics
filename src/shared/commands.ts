@@ -12,6 +12,7 @@ import {
   profileIdSchema,
   profileNameSchema,
 } from './map-catalog';
+import { overlayResizeRequestSchema, overlayStateSchema } from './overlay-state';
 import { scoreboardStateSchema } from './scoreboard-state';
 import { settingsSchema, settingsUpdateSchema } from './settings';
 import { updateStateSchema } from './update-state';
@@ -19,13 +20,14 @@ import { updateStateSchema } from './update-state';
 /**
  * `app.getSnapshot` (ADR-022): the renderer's state bootstrap. The response
  * object gains one slice per mirror store with its owning task (settings
- * E8.3, gameState E10.7, updates E18.1, scoreboard SCB.7).
+ * E8.3, gameState E10.7, updates E18.1, scoreboard SCB.7, overlay OVL.1).
  */
 export const appGetSnapshot = defineCommand(
   'app.getSnapshot',
   z.void(),
   z.object({
     gameState: gameStateSchema,
+    overlay: overlayStateSchema,
     scoreboard: scoreboardStateSchema,
     settings: settingsSchema,
     updateState: updateStateSchema,
@@ -265,6 +267,29 @@ export const gsiGetSetupPlan = defineCommand(
 export const gsiApplySetup = defineCommand('gsi.applySetup', z.void(), z.void());
 
 /**
+ * `overlay.open` (live-overlay 02-design.md §3.1, ADR-058): opens the overlay
+ * window or focuses the existing one — idempotent. Responds with the full
+ * overlay slice; the same slice is published as `evt:overlay.changed`, so
+ * stores are fed by the event (ADR-033).
+ */
+export const overlayOpen = defineCommand('overlay.open', z.void(), overlayStateSchema);
+
+/**
+ * `overlay.close` (live-overlay 02-design.md §3.1, ADR-058): closes the
+ * overlay window — idempotent; closing while closed is a regular success.
+ */
+export const overlayClose = defineCommand('overlay.close', z.void(), overlayStateSchema);
+
+/**
+ * `overlay.resize` (live-overlay 02-design.md §3.1, ADR-057/058): the
+ * overlay's resize handles report the dragged edge and the pointer's screen
+ * position, throttled to animation frames; main computes, clamps, and applies
+ * the new bounds. Only acknowledges — a resize racing the window's close is
+ * a no-op success, never an error.
+ */
+export const overlayResize = defineCommand('overlay.resize', overlayResizeRequestSchema, z.void());
+
+/**
  * `updates.check` (03-technical-design.md §5.3, REL-02): manual check-now.
  * The command only acknowledges — the result arrives as `evt:update.changed`.
  * While the auto-update setting is disabled the module refuses the check
@@ -301,6 +326,9 @@ export interface ContractCommandDefinitions {
   'maps.renameProfile': typeof mapsRenameProfile;
   'maps.deleteProfile': typeof mapsDeleteProfile;
   'maps.updateCallouts': typeof mapsUpdateCallouts;
+  'overlay.open': typeof overlayOpen;
+  'overlay.close': typeof overlayClose;
+  'overlay.resize': typeof overlayResize;
   'settings.update': typeof settingsUpdate;
   'steam.pickCs2Path': typeof steamPickCs2Path;
   'updates.check': typeof updatesCheck;

@@ -32,6 +32,13 @@ export interface StoredOperationalState {
   /** Port the GSI server actually bound to; `null` = not started yet. */
   readonly effectiveGsiPort: number | null;
   readonly windowBounds: WindowBounds | null;
+  /**
+   * Last known overlay-window placement (OVL.2, ADR-058); `null` until first
+   * captured. Same shape as `windowBounds`, but `maximized` is structurally
+   * `false` — the overlay is never maximizable, so a stored `true` is
+   * corruption and drops the whole group.
+   */
+  readonly overlayBounds: WindowBounds | null;
 }
 
 export interface OperationalState extends StoredOperationalState {
@@ -40,7 +47,7 @@ export interface OperationalState extends StoredOperationalState {
 
 /** The externally updatable slice — the token is managed internally only. */
 export type OperationalStateUpdate = Partial<
-  Pick<OperationalState, 'effectiveGsiPort' | 'windowBounds'>
+  Pick<OperationalState, 'effectiveGsiPort' | 'windowBounds' | 'overlayBounds'>
 >;
 
 export type OperationalStateField = keyof StoredOperationalState;
@@ -49,12 +56,14 @@ export const OPERATIONAL_STATE_DEFAULTS: StoredOperationalState = {
   gsiToken: null,
   effectiveGsiPort: null,
   windowBounds: null,
+  overlayBounds: null,
 };
 
 export const OPERATIONAL_STATE_FIELDS = [
   'gsiToken',
   'effectiveGsiPort',
   'windowBounds',
+  'overlayBounds',
 ] as const satisfies readonly OperationalStateField[];
 
 const fieldSchemas: { [K in OperationalStateField]: z.ZodType<StoredOperationalState[K]> } = {
@@ -69,6 +78,15 @@ const fieldSchemas: { [K in OperationalStateField]: z.ZodType<StoredOperationalS
       width: z.number().int().min(1),
       height: z.number().int().min(1),
       maximized: z.boolean(),
+    })
+    .nullable(),
+  overlayBounds: z
+    .strictObject({
+      x: z.number().int(),
+      y: z.number().int(),
+      width: z.number().int().min(1),
+      height: z.number().int().min(1),
+      maximized: z.literal(false),
     })
     .nullable(),
 };
@@ -125,5 +143,7 @@ export function mergeOperationalState(
     effectiveGsiPort:
       partial.effectiveGsiPort === undefined ? current.effectiveGsiPort : partial.effectiveGsiPort,
     windowBounds: partial.windowBounds === undefined ? current.windowBounds : partial.windowBounds,
+    overlayBounds:
+      partial.overlayBounds === undefined ? current.overlayBounds : partial.overlayBounds,
   };
 }

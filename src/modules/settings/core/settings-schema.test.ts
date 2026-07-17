@@ -23,6 +23,10 @@ const validStored: Settings = {
   scoreboardEnabled: false,
   scoreboardLayout: storedLayout,
   gsiTiming: 'slow',
+  overlayScoreboardOpacity: 0.4,
+  overlayMapOpacity: 0.6,
+  overlayCalloutOpacity: 0.2,
+  overlayChromeOpacity: 0.8,
 };
 
 describe('SETTINGS_DEFAULTS', () => {
@@ -37,6 +41,10 @@ describe('SETTINGS_DEFAULTS', () => {
       scoreboardEnabled: true,
       scoreboardLayout: DEFAULT_SCOREBOARD_LAYOUT,
       gsiTiming: 'default',
+      overlayScoreboardOpacity: 1,
+      overlayMapOpacity: 1,
+      overlayCalloutOpacity: 1,
+      overlayChromeOpacity: 1,
     });
   });
 
@@ -79,12 +87,17 @@ describe('parseSettings', () => {
     ['autostart', 'yes'],
     ['autostart', null],
     ['closeToTray', 2],
-    ['autoUpdate', undefined],
+    ['autoUpdate', null],
     ['scoreboardEnabled', 'yes'],
     ['scoreboardLayout', '{"groups":[]}'],
     ['scoreboardLayout', { groups: [{ label: 'Empty', fields: [] }] }],
     ['gsiTiming', 'turbo'],
     ['gsiTiming', null],
+    ['overlayScoreboardOpacity', 1.5],
+    ['overlayScoreboardOpacity', '0.5'],
+    ['overlayMapOpacity', -0.1],
+    ['overlayCalloutOpacity', true],
+    ['overlayChromeOpacity', null],
   ])('falls back only for the invalid field: %s = %j keeps the others', (field, bad) => {
     const { settings, fallbacks } = parseSettings({ ...validStored, [field]: bad });
 
@@ -95,11 +108,46 @@ describe('parseSettings', () => {
     }
   });
 
-  it('falls back on every field for an empty record', () => {
+  it('applies the default silently for an absent field (version skew, not corruption)', () => {
+    // The OVL.1 state: fields exist in the schema before their columns are
+    // migrated. Absence is the first-run precedent (silent defaults), not a
+    // corrupt value — only present-but-invalid values warrant a fallback log.
+    const {
+      overlayScoreboardOpacity,
+      overlayMapOpacity,
+      overlayCalloutOpacity,
+      overlayChromeOpacity,
+      ...withoutOverlay
+    } = validStored;
+    void overlayScoreboardOpacity;
+    void overlayMapOpacity;
+    void overlayCalloutOpacity;
+    void overlayChromeOpacity;
+
+    const { settings, fallbacks } = parseSettings(withoutOverlay);
+
+    expect(fallbacks).toEqual([]);
+    expect(settings).toEqual({
+      ...validStored,
+      overlayScoreboardOpacity: SETTINGS_DEFAULTS.overlayScoreboardOpacity,
+      overlayMapOpacity: SETTINGS_DEFAULTS.overlayMapOpacity,
+      overlayCalloutOpacity: SETTINGS_DEFAULTS.overlayCalloutOpacity,
+      overlayChromeOpacity: SETTINGS_DEFAULTS.overlayChromeOpacity,
+    });
+  });
+
+  it('treats an explicitly undefined field like an absent one', () => {
+    const { settings, fallbacks } = parseSettings({ ...validStored, autoUpdate: undefined });
+
+    expect(fallbacks).toEqual([]);
+    expect(settings.autoUpdate).toBe(SETTINGS_DEFAULTS.autoUpdate);
+  });
+
+  it('applies all defaults for an empty record without a single fallback log', () => {
     const { settings, fallbacks } = parseSettings({});
 
     expect(settings).toEqual(SETTINGS_DEFAULTS);
-    expect(fallbacks).toEqual([...SETTINGS_FIELDS]);
+    expect(fallbacks).toEqual([]);
   });
 
   it('ignores unknown keys', () => {

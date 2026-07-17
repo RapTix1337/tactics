@@ -1,5 +1,6 @@
 import { defineEvent } from './contract';
 import { gameStateSchema } from './game-state';
+import { overlayStateSchema } from './overlay-state';
 import { scoreboardStateSchema } from './scoreboard-state';
 import { settingsSchema } from './settings';
 import { updateStateSchema } from './update-state';
@@ -35,12 +36,21 @@ export const updateChanged = defineEvent('update', updateStateSchema);
 export const scoreboardChanged = defineEvent('scoreboard', scoreboardStateSchema);
 
 /**
+ * `evt:overlay.changed` (live-overlay 02-design.md §3.2, ADR-058): the full
+ * overlay slice, published by the app wiring when the overlay window
+ * manager's state changes — both close paths (live-page control, window ✕)
+ * converge on this one event.
+ */
+export const overlayChanged = defineEvent('overlay', overlayStateSchema);
+
+/**
  * The contract's event definitions, keyed by domain — the counterpart of
  * `ContractCommandDefinitions`; each entry pairs a domain with its
  * `defineEvent` definition.
  */
 export interface ContractEventDefinitions {
   gameState: typeof gameStateChanged;
+  overlay: typeof overlayChanged;
   scoreboard: typeof scoreboardChanged;
   settings: typeof settingsChanged;
   update: typeof updateChanged;

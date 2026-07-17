@@ -25,6 +25,9 @@ export const COMMAND_NAMES = [
   'maps.renameProfile',
   'maps.deleteProfile',
   'maps.updateCallouts',
+  'overlay.open',
+  'overlay.close',
+  'overlay.resize',
   'settings.update',
   'steam.pickCs2Path',
   'updates.check',
@@ -33,6 +36,7 @@ export const COMMAND_NAMES = [
 
 export const EVENT_DOMAINS = [
   'gameState',
+  'overlay',
   'scoreboard',
   'settings',
   'update',

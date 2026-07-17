@@ -17,6 +17,9 @@ import {
   mapsReplaceProfileImage,
   mapsSetDefaultProfile,
   mapsUpdateCallouts,
+  overlayClose,
+  overlayOpen,
+  overlayResize,
   settingsUpdate,
   steamPickCs2Path,
   updatesCheck,
@@ -24,7 +27,13 @@ import {
 } from './commands';
 import { COMMAND_NAMES, EVENT_DOMAINS } from './contract-names';
 import type { ContractEventDefinitions } from './events';
-import { gameStateChanged, scoreboardChanged, settingsChanged, updateChanged } from './events';
+import {
+  gameStateChanged,
+  overlayChanged,
+  scoreboardChanged,
+  settingsChanged,
+  updateChanged,
+} from './events';
 
 describe('contract name lists', () => {
   it('lists exactly the defined commands (both directions, type level)', () => {
@@ -47,6 +56,9 @@ describe('contract name lists', () => {
     expect(COMMAND_NAMES).toContain(mapsRenameProfile.name);
     expect(COMMAND_NAMES).toContain(mapsDeleteProfile.name);
     expect(COMMAND_NAMES).toContain(mapsUpdateCallouts.name);
+    expect(COMMAND_NAMES).toContain(overlayOpen.name);
+    expect(COMMAND_NAMES).toContain(overlayClose.name);
+    expect(COMMAND_NAMES).toContain(overlayResize.name);
     expect(COMMAND_NAMES).toContain(settingsUpdate.name);
     expect(COMMAND_NAMES).toContain(steamPickCs2Path.name);
     expect(COMMAND_NAMES).toContain(updatesCheck.name);
@@ -66,6 +78,7 @@ describe('contract name lists', () => {
     expectTypeOf<(typeof EVENT_DOMAINS)[number]>().toEqualTypeOf<keyof ContractEventDefinitions>();
 
     expect(EVENT_DOMAINS).toContain(gameStateChanged.domain);
+    expect(EVENT_DOMAINS).toContain(overlayChanged.domain);
     expect(EVENT_DOMAINS).toContain(scoreboardChanged.domain);
     expect(EVENT_DOMAINS).toContain(settingsChanged.domain);
     expect(EVENT_DOMAINS).toContain(updateChanged.domain);

@@ -5,7 +5,7 @@ import {
   createRouter,
   RouterProvider,
 } from '@tanstack/react-router';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { JSX } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -17,16 +17,19 @@ import type { Settings } from '../../../shared/settings';
 import { SAMPLE_SCOREBOARD_STATE } from '../../features/scoreboard/sample-state';
 import { openExternal } from '../../lib/ipc/external-links';
 import { loadMapList } from '../../lib/ipc/map-catalog';
+import { closeOverlay, openOverlay } from '../../lib/ipc/overlay';
 import { updateSettings } from '../../lib/ipc/settings';
 import { useAppStore } from '../../stores/app-store';
 import { useGameStateStore } from '../../stores/game-state-store';
 import { useMapCatalogStore } from '../../stores/map-catalog-store';
+import { useOverlayStore } from '../../stores/overlay-store';
 import { useScoreboardStore } from '../../stores/scoreboard-store';
 import { useSettingsStore } from '../../stores/settings-store';
 import { LivePage } from './LivePage';
 
 vi.mock('../../lib/ipc/external-links', () => ({ openExternal: vi.fn() }));
 vi.mock('../../lib/ipc/map-catalog', () => ({ loadMapList: vi.fn() }));
+vi.mock('../../lib/ipc/overlay', () => ({ openOverlay: vi.fn(), closeOverlay: vi.fn() }));
 vi.mock('../../lib/ipc/settings', () => ({ updateSettings: vi.fn() }));
 
 // The map view has its own suite (MapView.test.tsx); the live page only
@@ -63,6 +66,10 @@ const storedSettings: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: { groups: [{ label: 'Match totals', fields: ['kills'] }] },
   gsiTiming: 'default',
+  overlayScoreboardOpacity: 1,
+  overlayMapOpacity: 1,
+  overlayCalloutOpacity: 1,
+  overlayChromeOpacity: 1,
 };
 
 // The upload hint renders a router link, so the page needs a routing
@@ -89,11 +96,19 @@ describe('LivePage', () => {
       .mockReset()
       .mockResolvedValue(success([dust2, mirage, emptyNuke]));
     vi.mocked(updateSettings).mockReset().mockResolvedValue(success(storedSettings));
+    vi.mocked(openOverlay)
+      .mockReset()
+      .mockResolvedValue(success({ open: true }));
+    vi.mocked(closeOverlay)
+      .mockReset()
+      .mockResolvedValue(success({ open: false }));
     useAppStore.setState({ ipcStatus: 'ready', lastError: undefined });
     useGameStateStore.setState({ gameState: undefined });
     useMapCatalogStore.setState({ list: [dust2, mirage, emptyNuke], profilesById: {} });
-    // Pre-snapshot defaults: no scoreboard slice, no settings — the plain
-    // map view path (every pre-SCB.9 test runs unchanged on top of these).
+    // Pre-snapshot defaults: no scoreboard slice, no settings, no overlay —
+    // the plain map view path (every pre-SCB.9/OVL.9 test runs unchanged on
+    // top of these).
+    useOverlayStore.setState({ overlay: undefined });
     useScoreboardStore.setState({ scoreboard: undefined });
     useSettingsStore.setState({ settings: undefined });
   });
@@ -325,6 +340,83 @@ describe('LivePage', () => {
       await user.click(await screen.findByRole('switch', { name: 'Scoreboard' }));
 
       expect(updateSettings).toHaveBeenCalledWith({ scoreboardEnabled: false });
+    });
+  });
+
+  describe('overlay integration (OVL.9)', () => {
+    function liveOnDust2(): void {
+      useGameStateStore.setState({
+        gameState: { status: 'connected', map: { kind: 'resolved', mapId: 'de_dust2' } },
+      });
+    }
+
+    it('shows the header toggle once the overlay snapshot arrives, even without a match', async () => {
+      useOverlayStore.setState({ overlay: { open: false } });
+      renderLivePage();
+
+      expect(await screen.findByRole('switch', { name: 'Overlay' })).not.toBeChecked();
+    });
+
+    it('dispatches overlay.open from the header toggle via the confirmation (spec AC 1, OVL.11)', async () => {
+      useOverlayStore.setState({ overlay: { open: false } });
+      const user = userEvent.setup();
+      renderLivePage();
+
+      await user.click(await screen.findByRole('switch', { name: 'Overlay' }));
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+      expect(openOverlay).toHaveBeenCalledTimes(1);
+    });
+
+    it('swaps the content area for the placeholder with the overlay controls while open (spec AC 1)', async () => {
+      liveOnDust2();
+      useOverlayStore.setState({ overlay: { open: true } });
+      useSettingsStore.setState({ settings: storedSettings });
+      renderLivePage();
+
+      expect(await screen.findByText('Shown in overlay')).toBeInTheDocument();
+      expect(screen.queryByTestId('live-map-view')).not.toBeInTheDocument();
+      expect(screen.getByRole('slider', { name: 'Scoreboard opacity' })).toBeInTheDocument();
+      expect(screen.getByRole('slider', { name: 'Map opacity' })).toBeInTheDocument();
+      expect(screen.getByRole('slider', { name: 'Callouts opacity' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('slider', { name: 'Title bar & status opacity' }),
+      ).toBeInTheDocument();
+      // The stable E2E selector survives the swap (E5.4).
+      expect(screen.getByTestId('ipc-status')).toBeInTheDocument();
+    });
+
+    it('replaces even the waiting state while the overlay is open', async () => {
+      useOverlayStore.setState({ overlay: { open: true } });
+      renderLivePage();
+
+      expect(await screen.findByText('Shown in overlay')).toBeInTheDocument();
+      expect(screen.queryByText('Waiting for game state…')).not.toBeInTheDocument();
+    });
+
+    it('dispatches overlay.close from the placeholder close control (spec AC 7)', async () => {
+      liveOnDust2();
+      useOverlayStore.setState({ overlay: { open: true } });
+      const user = userEvent.setup();
+      renderLivePage();
+
+      await user.click(await screen.findByRole('button', { name: 'Close overlay' }));
+
+      expect(closeOverlay).toHaveBeenCalledTimes(1);
+    });
+
+    it('restores the full live content when the overlay closes (spec AC 7)', async () => {
+      liveOnDust2();
+      useOverlayStore.setState({ overlay: { open: true } });
+      renderLivePage();
+      expect(await screen.findByText('Shown in overlay')).toBeInTheDocument();
+
+      act(() => {
+        useOverlayStore.setState({ overlay: { open: false } });
+      });
+
+      expect(await screen.findByTestId('live-map-view')).toHaveTextContent('de_dust2');
+      expect(screen.queryByText('Shown in overlay')).not.toBeInTheDocument();
     });
   });
 });

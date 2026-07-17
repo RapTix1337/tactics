@@ -20,6 +20,7 @@ const validStored: StoredOperationalState = {
   gsiToken: validToken,
   effectiveGsiPort: 42731,
   windowBounds: { x: -1920, y: 0, width: 1280, height: 720, maximized: false },
+  overlayBounds: { x: 100, y: 50, width: 960, height: 540, maximized: false },
 };
 
 describe('OPERATIONAL_STATE_DEFAULTS', () => {
@@ -28,6 +29,7 @@ describe('OPERATIONAL_STATE_DEFAULTS', () => {
       gsiToken: null,
       effectiveGsiPort: null,
       windowBounds: null,
+      overlayBounds: null,
     });
   });
 });
@@ -59,15 +61,33 @@ describe('parseOperationalState', () => {
     expect(fallbacks).toEqual([]);
   });
 
-  it('accepts null for effectiveGsiPort and windowBounds as real values', () => {
+  it('accepts null for effectiveGsiPort and both bounds as real values', () => {
     const { state, fallbacks } = parseOperationalState({
       ...validStored,
       effectiveGsiPort: null,
       windowBounds: null,
+      overlayBounds: null,
     });
 
     expect(state.effectiveGsiPort).toBeNull();
     expect(state.windowBounds).toBeNull();
+    expect(state.overlayBounds).toBeNull();
+    expect(fallbacks).toEqual([]);
+  });
+
+  it('accepts negative overlay coordinates (multi-monitor layouts)', () => {
+    const { state, fallbacks } = parseOperationalState({
+      ...validStored,
+      overlayBounds: { x: -2560, y: -400, width: 480, height: 320, maximized: false },
+    });
+
+    expect(state.overlayBounds).toEqual({
+      x: -2560,
+      y: -400,
+      width: 480,
+      height: 320,
+      maximized: false,
+    });
     expect(fallbacks).toEqual([]);
   });
 
@@ -99,6 +119,12 @@ describe('parseOperationalState', () => {
     ['windowBounds', { x: 0, y: 0, width: 1280, height: 720 }],
     ['windowBounds', { x: null, y: 0, width: 1280, height: 720, maximized: false }],
     ['windowBounds', 'somewhere'],
+    ['overlayBounds', { x: 0, y: 0, width: 0, height: 540, maximized: false }],
+    ['overlayBounds', { x: 0, y: 0, width: 960, height: 540 }],
+    // The overlay is never maximizable — a stored true was never written by
+    // us, so it is corruption, not a state to tolerate (OVL.2 decision).
+    ['overlayBounds', { x: 0, y: 0, width: 960, height: 540, maximized: true }],
+    ['overlayBounds', 'somewhere'],
   ])('falls back only for the invalid field: %s = %j keeps the others', (field, bad) => {
     const { state, fallbacks } = parseOperationalState({ ...validStored, [field]: bad });
 
@@ -144,11 +170,25 @@ describe('mergeOperationalState', () => {
   });
 
   it('treats an explicit null as a value (port back to automatic, bounds cleared)', () => {
-    const merged = mergeOperationalState(current, { effectiveGsiPort: null, windowBounds: null });
+    const merged = mergeOperationalState(current, {
+      effectiveGsiPort: null,
+      windowBounds: null,
+      overlayBounds: null,
+    });
 
     expect(merged.effectiveGsiPort).toBeNull();
     expect(merged.windowBounds).toBeNull();
+    expect(merged.overlayBounds).toBeNull();
     expect(merged.gsiToken).toBe(validToken);
+  });
+
+  it('updates the overlay bounds independently of the window bounds', () => {
+    const overlayBounds = { x: 10, y: 20, width: 480, height: 320, maximized: false } as const;
+
+    const merged = mergeOperationalState(current, { overlayBounds });
+
+    expect(merged.overlayBounds).toEqual(overlayBounds);
+    expect(merged.windowBounds).toEqual(current.windowBounds);
   });
 
   it('ignores explicitly undefined fields', () => {

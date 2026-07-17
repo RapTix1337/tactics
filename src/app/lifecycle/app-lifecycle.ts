@@ -3,11 +3,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   app,
-  type BrowserWindow,
+  BrowserWindow,
   Menu,
   nativeImage,
   net,
   protocol,
+  type Rectangle,
   screen,
   session,
   shell,
@@ -27,7 +28,14 @@ import type { StorageDatabase } from '../../modules/storage';
 import { openDatabase } from '../../modules/storage';
 import type { UpdaterPort } from '../../modules/updates';
 import { createElectronUpdaterPort, createUpdateService } from '../../modules/updates';
-import { APP_NAME, gameStateChanged, scoreboardChanged, updateChanged } from '../../shared';
+import type { Settings } from '../../shared';
+import {
+  APP_NAME,
+  gameStateChanged,
+  scoreboardChanged,
+  settingsChanged,
+  updateChanged,
+} from '../../shared';
 import { registerAppCommands } from '../ipc/app-commands';
 import {
   createAppEventPublisher,
@@ -39,6 +47,7 @@ import {
 import { registerGsiCommands, runStartupConfigVerify } from '../ipc/gsi-commands';
 import { registerLogsCommands } from '../ipc/logs-commands';
 import { registerMapsCommands } from '../ipc/maps-commands';
+import { registerOverlayCommands } from '../ipc/overlay-commands';
 import { describeError } from '../ipc/register-command';
 import { registerSettingsCommands } from '../ipc/settings-commands';
 import { registerSteamCommands } from '../ipc/steam-commands';
@@ -49,6 +58,7 @@ import { createGsiWiring } from '../wiring/gsi-wiring';
 import { createScoreboardWiring } from '../wiring/scoreboard-wiring';
 import type { LoginItemsPort } from './autostart';
 import { syncAutostart } from './autostart';
+import { applyOverlayCompositionSwitches } from './chromium-switches';
 import {
   resolveGsiPortOverride,
   resolveUpdatesDisabled,
@@ -57,8 +67,15 @@ import {
 import { installMainErrorCapture } from './error-capture';
 import { createMainWindow } from './main-window';
 import { createMapImageProtocolHandler, MAP_IMAGE_PROTOCOL_SCHEME } from './map-image-protocol';
+import { createOverlayWindowManager } from './overlay-window';
+import { buildOverlayWindowOptions } from './overlay-window-options';
 import { DEV_CONTENT_SECURITY_POLICY, shouldAllowNavigation } from './security-policy';
-import { buildTrayMenuTemplate, resolveAppIconPath, resolveWindowsClosedAction } from './tray';
+import {
+  buildTrayMenuTemplate,
+  OVERLAY_OPACITY_RESET,
+  resolveAppIconPath,
+  resolveWindowsClosedAction,
+} from './tray';
 import { createWindowBoundsTracker, planBoundsRestore } from './window-bounds';
 
 /**
@@ -67,6 +84,10 @@ import { createWindowBoundsTracker, planBoundsRestore } from './window-bounds';
  * and autostart.
  */
 export function startApp(): void {
+  // Before app ready — Chromium reads the feature list at startup
+  // (chromium-switches.ts: the overlay above a borderless CS2).
+  applyOverlayCompositionSwitches(app.commandLine);
+
   // Must precede the single-instance lock: the lock is keyed on the
   // user-data directory, so an overridden test instance never collides
   // with a regular installation.
@@ -294,6 +315,86 @@ export function startApp(): void {
       void gameStateWiring.stop();
     });
 
+    // Restore clamping targets the displays present right now (a monitor may
+    // be gone since the last run). Primary first — getAllDisplays guarantees
+    // no order, but the planner falls back to the first work area on zero
+    // overlap. Shared by the main-window and overlay restore paths.
+    const currentWorkAreas = (): Rectangle[] => {
+      const primaryDisplay = screen.getPrimaryDisplay();
+      return [
+        primaryDisplay,
+        ...screen.getAllDisplays().filter((display) => display.id !== primaryDisplay.id),
+      ].map((display) => display.workArea);
+    };
+
+    // The overlay window manager (live-overlay 02-design.md §2.1, OVL.4):
+    // testable lifecycle logic in overlay-window.ts; only this thin window
+    // factory touches Electron. Created before the command registrations so
+    // the snapshot slice and the overlay commands read the real manager.
+    const overlayManager = createOverlayWindowManager({
+      createWindow: (restoredBounds) => {
+        const overlayWindow = new BrowserWindow(
+          buildOverlayWindowOptions(
+            fileURLToPath(new URL('../preload/index.cjs', import.meta.url)),
+            restoredBounds,
+          ),
+        );
+        // pop-up-menu z-level (ADR-059, spec AC 2): at the default floating
+        // level the transparent overlay stops being presented above a
+        // focused borderless CS2; this is the lowest band that survives the
+        // field torture test. No constructor option exists for the level, so
+        // it is set right after creation. Every elevated band boots CS2 out
+        // of EXCLUSIVE fullscreen while the overlay is open — unsupported by
+        // design (ADR-059; OVL.11 adds the warn-on-open).
+        overlayWindow.setAlwaysOnTop(true, 'pop-up-menu');
+        overlayWindow.once('ready-to-show', () => {
+          overlayWindow.show();
+        });
+        if (devServerUrl !== undefined) {
+          void overlayWindow.loadURL(`${devServerUrl}/overlay.html`);
+        } else {
+          void overlayWindow.loadFile(
+            fileURLToPath(new URL('../renderer/overlay.html', import.meta.url)),
+          );
+        }
+        return {
+          focus: () => overlayWindow.focus(),
+          close: () => overlayWindow.close(),
+          getBounds: () => overlayWindow.getBounds(),
+          setBounds: (bounds) => {
+            overlayWindow.setBounds(bounds);
+          },
+          getNormalBounds: () => overlayWindow.getNormalBounds(),
+          isMaximized: () => overlayWindow.isMaximized(),
+          isDestroyed: () => overlayWindow.isDestroyed(),
+          // Electron types `on` per event name, so the port's event union
+          // cannot pass through directly; the switch keeps it cast-free.
+          on: (event, listener) => {
+            switch (event) {
+              case 'move':
+                overlayWindow.on('move', listener);
+                break;
+              case 'resize':
+                overlayWindow.on('resize', listener);
+                break;
+              case 'close':
+                overlayWindow.on('close', listener);
+                break;
+              case 'closed':
+                overlayWindow.on('closed', listener);
+                break;
+            }
+          },
+        };
+      },
+      getStoredBounds: () => operationalStateRepository.getOperationalState().overlayBounds,
+      getWorkAreas: currentWorkAreas,
+      persistBounds: (bounds) => {
+        operationalStateRepository.updateOperationalState({ overlayBounds: bounds });
+      },
+      logger,
+    });
+
     // Registered before any window exists, so no invoke can precede them.
     const commandDeps = createElectronCommandDeps(createLogger('ipc'));
     registerAppCommands(
@@ -301,6 +402,7 @@ export function startApp(): void {
       createLogger('renderer'),
       {
         getGameState: () => gameStateWiring.getGameState(),
+        getOverlayState: () => ({ open: overlayManager.isOpen() }),
         getScoreboardState: () => scoreboardWiring.getScoreboardState(),
         getSettings: () => settingsRepository.getSettings(),
         getUpdateState: () => updateService.getState(),
@@ -309,18 +411,32 @@ export function startApp(): void {
       { openExternal: (url) => shell.openExternal(url) },
     );
     registerLogsCommands(commandDeps, createElectronLogsDeps());
+    // The wrapped update path: persist plus every settings side effect. The
+    // settings command and the tray's overlay-opacity reset share it, so both
+    // behave identically (live-overlay 02-design.md §2.1).
+    const applySettingsUpdate = (partial: Partial<Settings>): Settings => {
+      const next = settingsRepository.updateSettings(partial);
+      // A gsiPort change must rebind the intake (05-gsi.md error case 3);
+      // fire-and-forget — the response must not wait on the restart.
+      void gameStateWiring.handleSettingsChanged();
+      // E17.2: an autostart toggle registers/deregisters immediately.
+      applyAutostart(next.autostart);
+      // E18.1: an autoUpdate toggle starts/stops the periodic check cycle.
+      updateService.handleSettingsChanged();
+      return next;
+    };
     registerSettingsCommands(commandDeps, {
-      updateSettings: (partial) => {
-        const next = settingsRepository.updateSettings(partial);
-        // A gsiPort change must rebind the intake (05-gsi.md error case 3);
-        // fire-and-forget — the response must not wait on the restart.
-        void gameStateWiring.handleSettingsChanged();
-        // E17.2: an autostart toggle registers/deregisters immediately.
-        applyAutostart(next.autostart);
-        // E18.1: an autoUpdate toggle starts/stops the periodic check cycle.
-        updateService.handleSettingsChanged();
-        return next;
-      },
+      updateSettings: applySettingsUpdate,
+      publisher: eventPublisher,
+    });
+    // OVL.5: commands dispatch onto the manager; the manager's state feed is
+    // published as evt:overlay.changed inside the registration (one tested
+    // surface — maintainer decision), so both close paths reach every window.
+    registerOverlayCommands(commandDeps, {
+      open: overlayManager.open,
+      close: overlayManager.close,
+      resize: overlayManager.resize,
+      onStateChanged: overlayManager.onStateChanged,
       publisher: eventPublisher,
     });
     registerSteamCommands(
@@ -387,15 +503,7 @@ export function startApp(): void {
         mainWindow.focus();
         return;
       }
-      // E17.3: reopen where the user left the window, clamped to the
-      // displays present right now (a monitor may be gone since then).
-      // Primary first — getAllDisplays guarantees no order, but the
-      // planner falls back to the first work area on zero overlap.
-      const primaryDisplay = screen.getPrimaryDisplay();
-      const workAreas = [
-        primaryDisplay,
-        ...screen.getAllDisplays().filter((display) => display.id !== primaryDisplay.id),
-      ].map((display) => display.workArea);
+      // E17.3: reopen where the user left the window.
       mainWindow = createMainWindow({
         preloadPath: fileURLToPath(new URL('../preload/index.cjs', import.meta.url)),
         rendererHtmlPath: fileURLToPath(new URL('../renderer/index.html', import.meta.url)),
@@ -403,7 +511,7 @@ export function startApp(): void {
         iconPath: appIconPath,
         restorePlan: planBoundsRestore(
           operationalStateRepository.getOperationalState().windowBounds,
-          workAreas,
+          currentWorkAreas(),
         ),
       });
       const boundsTracker = createWindowBoundsTracker({
@@ -422,6 +530,10 @@ export function startApp(): void {
       mainWindow.on('close', boundsTracker.flush);
       mainWindow.on('closed', () => {
         mainWindow = null;
+        // Close-to-tray off: the overlay follows the main window, so
+        // window-all-closed fires and the app quits as before the overlay
+        // existed (02-design.md §2.1). Read per event like window-all-closed.
+        overlayManager.handleMainWindowClosed(settingsRepository.getSettings().closeToTray);
       });
     };
 
@@ -448,6 +560,17 @@ export function startApp(): void {
         buildTrayMenuTemplate({
           showWindow: openMainWindow,
           hideWindow: () => mainWindow?.hide(),
+          resetOverlayOpacity: () => {
+            // Best-effort like the bounds tracker: a failing write from a
+            // tray click is logged, never thrown into Electron's menu code.
+            try {
+              eventPublisher.publish(settingsChanged, applySettingsUpdate(OVERLAY_OPACITY_RESET));
+            } catch (error) {
+              logger.warn('Resetting the overlay opacity failed', {
+                error: describeError(error),
+              });
+            }
+          },
           quit: () => {
             app.quit();
           },

@@ -136,5 +136,9 @@ function encodeStoredSettings(settings: Settings): Omit<typeof settingsTable.$in
     scoreboardEnabled: settings.scoreboardEnabled ? 1 : 0,
     scoreboardLayout: JSON.stringify(settings.scoreboardLayout),
     gsiTiming: settings.gsiTiming,
+    overlayScoreboardOpacity: settings.overlayScoreboardOpacity,
+    overlayMapOpacity: settings.overlayMapOpacity,
+    overlayCalloutOpacity: settings.overlayCalloutOpacity,
+    overlayChromeOpacity: settings.overlayChromeOpacity,
   };
 }

@@ -24,7 +24,13 @@ const silentLogger: Logger = {
 const noRegistry: RegistryReader = { readValue: () => Promise.resolve(undefined) };
 
 function createOperationalState(overrides: Partial<OperationalState> = {}): OperationalState {
-  return { gsiToken: TOKEN, effectiveGsiPort: null, windowBounds: null, ...overrides };
+  return {
+    gsiToken: TOKEN,
+    effectiveGsiPort: null,
+    windowBounds: null,
+    overlayBounds: null,
+    ...overrides,
+  };
 }
 
 function createWiring(

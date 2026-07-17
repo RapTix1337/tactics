@@ -42,6 +42,10 @@ export const SETTINGS_DEFAULTS: Settings = {
   scoreboardEnabled: true,
   scoreboardLayout: DEFAULT_SCOREBOARD_LAYOUT,
   gsiTiming: 'default',
+  overlayScoreboardOpacity: 1,
+  overlayMapOpacity: 1,
+  overlayCalloutOpacity: 1,
+  overlayChromeOpacity: 1,
 };
 
 export interface ParsedSettings {
@@ -52,14 +56,19 @@ export interface ParsedSettings {
 
 /**
  * Tolerant per-field read (ADR-029, 03-technical-design.md §7.2): every field
- * is validated on its own; an invalid value falls back to that field's
- * default — one bad column never costs the other five. Unknown keys in `raw`
- * are ignored.
+ * is validated on its own; a present-but-invalid value falls back to that
+ * field's default — one bad column never costs the others. An **absent**
+ * field takes its default silently: absence is version skew (a schema field
+ * whose column is not migrated yet), the first-run precedent — not
+ * corruption (OVL.1 maintainer decision). Unknown keys in `raw` are ignored.
  */
 export function parseSettings(raw: Readonly<Record<string, unknown>>): ParsedSettings {
   const fallbacks: SettingsField[] = [];
   const settings = { ...SETTINGS_DEFAULTS };
   for (const field of SETTINGS_FIELDS) {
+    if (raw[field] === undefined) {
+      continue;
+    }
     if (!applyField(settings, field, raw[field])) {
       fallbacks.push(field);
     }

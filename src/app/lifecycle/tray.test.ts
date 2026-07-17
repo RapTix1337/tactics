@@ -4,7 +4,12 @@ import type { MenuItem } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { TrayMenuActions } from './tray';
-import { buildTrayMenuTemplate, resolveAppIconPath, resolveWindowsClosedAction } from './tray';
+import {
+  buildTrayMenuTemplate,
+  OVERLAY_OPACITY_RESET,
+  resolveAppIconPath,
+  resolveWindowsClosedAction,
+} from './tray';
 
 // E17.1 risk note: tray behaviors are hard to unit-test — the pure pieces
 // (setting → close decision, menu template) are covered here; the running
@@ -24,14 +29,17 @@ describe('buildTrayMenuTemplate', () => {
   const actions: TrayMenuActions = {
     showWindow: vi.fn(),
     hideWindow: vi.fn(),
+    resetOverlayOpacity: vi.fn(),
     quit: vi.fn(),
   };
   const template = buildTrayMenuTemplate(actions);
 
-  it('offers show, hide, and quit separated from the window items', () => {
+  it('offers show, hide, the overlay-opacity reset, and quit, separated', () => {
     expect(template.map((item) => item.label ?? item.type)).toEqual([
       'Show',
       'Hide',
+      'separator',
+      'Reset overlay opacity',
       'separator',
       'Quit',
     ]);
@@ -40,11 +48,21 @@ describe('buildTrayMenuTemplate', () => {
   it.each([
     ['Show', 'showWindow'],
     ['Hide', 'hideWindow'],
+    ['Reset overlay opacity', 'resetOverlayOpacity'],
     ['Quit', 'quit'],
   ] as const)('dispatches %s to the %s action', (label, action) => {
     const item = template.find((candidate) => candidate.label === label);
     item?.click?.({} as MenuItem, undefined, {});
     expect(actions[action]).toHaveBeenCalledTimes(1);
+  });
+
+  it('resets exactly the four per-element opacities to 1 (ADR-060)', () => {
+    expect(OVERLAY_OPACITY_RESET).toEqual({
+      overlayScoreboardOpacity: 1,
+      overlayMapOpacity: 1,
+      overlayCalloutOpacity: 1,
+      overlayChromeOpacity: 1,
+    });
   });
 });
 
