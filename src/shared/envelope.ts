@@ -17,7 +17,10 @@ export function success<TData>(data: TData): CommandResult<TData> {
   return { ok: true, data };
 }
 
-/** @param message user-presentable — no stack traces or internals (ADR-025). */
+/**
+ * @param code machine-readable error code the renderer branches on.
+ * @param message user-presentable — no stack traces or internals (ADR-025).
+ */
 export function failure(code: ErrorCode, message: string): CommandResult<never> {
   return { ok: false, error: { code, message } };
 }
