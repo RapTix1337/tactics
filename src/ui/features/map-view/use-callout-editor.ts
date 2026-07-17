@@ -6,6 +6,7 @@ import type { MapProfileDetails } from '../../../shared/map-catalog';
 import type { DraftCallout, NormalizedPoint } from './callout-editing';
 import {
   addCallout,
+  clearCallouts,
   deleteCallout,
   isNameTaken,
   moveCallout,
@@ -42,6 +43,8 @@ export interface CalloutEditor {
   readonly submitDialog: (name: string) => void;
   readonly move: (calloutId: number, position: NormalizedPoint) => void;
   readonly remove: (calloutId: number) => void;
+  /** Empties the draft; Cancel still restores the saved set until saved. */
+  readonly clear: () => void;
   /** Duplicate check for the open dialog (a rename may keep its own name). */
   readonly isDialogNameTaken: (name: string) => boolean;
 }
@@ -137,6 +140,9 @@ export function useCalloutEditor(profile: MapProfileDetails): CalloutEditor {
         ...current,
         draft: deleteCallout(current.draft, calloutId),
       }));
+    },
+    clear: (): void => {
+      updateSession((current) => ({ ...current, draft: clearCallouts() }));
     },
     isDialogNameTaken: (name): boolean => {
       if (session === undefined || session.dialog === undefined) {

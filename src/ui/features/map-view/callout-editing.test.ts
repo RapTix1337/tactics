@@ -4,6 +4,7 @@ import type { CatalogCallout } from '../../../shared/map-catalog';
 import {
   addCallout,
   clampNormalized,
+  clearCallouts,
   deleteCallout,
   isInsideImage,
   isNameTaken,
@@ -99,6 +100,10 @@ describe('draft operations', () => {
 
   it('deletes the target', () => {
     expect(deleteCallout(toDraft(saved), 0).map((callout) => callout.name)).toEqual(['Pit']);
+  });
+
+  it('clears every callout', () => {
+    expect(clearCallouts()).toEqual([]);
   });
 
   it('checks name uniqueness with a rename exclusion', () => {

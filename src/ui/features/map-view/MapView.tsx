@@ -330,6 +330,10 @@ function MapCanvas({ profile, editable, onImageError }: MapCanvasProps): JSX.Ele
             focusCanvas();
           }}
           onAdd={handleAddAtCenter}
+          onClear={(): void => {
+            editor.clear();
+            focusCanvas();
+          }}
           onSave={editor.save}
           onCancel={(): void => {
             editor.cancel();
@@ -366,6 +370,7 @@ interface CalloutEditorToolbarProps {
   readonly canEdit: boolean;
   readonly onStart: () => void;
   readonly onAdd: () => void;
+  readonly onClear: () => void;
   readonly onSave: () => void;
   readonly onCancel: () => void;
 }
@@ -380,11 +385,12 @@ function CalloutEditorToolbar({
   canEdit,
   onStart,
   onAdd,
+  onClear,
   onSave,
   onCancel,
 }: CalloutEditorToolbarProps): JSX.Element {
   return (
-    <div className="absolute right-2 top-2 z-10 flex max-w-72 flex-wrap items-center justify-end gap-1 rounded-md border bg-background/90 p-1 shadow-sm">
+    <div className="absolute right-2 top-2 z-10 flex flex-wrap items-center justify-end gap-1 rounded-md border bg-background/90 p-1 shadow-sm">
       {session === undefined ? (
         <Button type="button" variant="outline" size="sm" disabled={!canEdit} onClick={onStart}>
           Edit callouts
@@ -399,6 +405,15 @@ function CalloutEditorToolbar({
             onClick={onAdd}
           >
             Add callout…
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={session.saving || session.draft.length === 0}
+            onClick={onClear}
+          >
+            Remove all
           </Button>
           <Button type="button" size="sm" disabled={session.saving} onClick={onSave}>
             Save

@@ -619,6 +619,34 @@ describe('MapView', () => {
       expect(lastUpdatePayload(invoke).callouts).toEqual([{ name: 'Long', x: 0.69, y: 0.715 }]);
     });
 
+    it('removes all callouts and saves the empty set', async () => {
+      const invoke = installEditorBridge();
+      await renderEditableView();
+      startEditing();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Remove all' }));
+
+      expect(screen.queryByRole('button', { name: 'Long' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Pit' })).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      await screen.findByRole('button', { name: 'Edit callouts' });
+
+      expect(lastUpdatePayload(invoke).callouts).toEqual([]);
+    });
+
+    it('disables Remove all once the draft is empty', async () => {
+      installEditorBridge();
+      await renderEditableView();
+      startEditing();
+
+      const removeAll = screen.getByRole('button', { name: 'Remove all' });
+      expect(removeAll).toBeEnabled();
+
+      fireEvent.click(removeAll);
+      expect(removeAll).toBeDisabled();
+    });
+
     it('cancel discards the draft and restores the saved callouts', async () => {
       const invoke = installEditorBridge();
       await renderEditableView();

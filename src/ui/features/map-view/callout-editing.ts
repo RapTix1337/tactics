@@ -109,6 +109,12 @@ export function deleteCallout(draft: readonly DraftCallout[], id: number): reado
   return draft.filter((callout) => callout.id !== id);
 }
 
+/** The empty draft — the "remove all" editor action; Cancel still restores
+ * the saved set, so nothing is lost until the cleared draft is saved. */
+export function clearCallouts(): readonly DraftCallout[] {
+  return [];
+}
+
 /**
  * Callout names are unique within a profile (`calloutListSchema`) — the
  * editor validates against the draft so a duplicate is caught in the name
