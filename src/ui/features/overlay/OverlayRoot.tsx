@@ -6,6 +6,7 @@ import { useSettingsStore } from '../../stores/settings-store';
 import { LiveContent } from '../live-content/LiveContent';
 import { OverlayChrome } from './OverlayChrome';
 import { OverlayFrame } from './OverlayFrame';
+import { OverlayIdlePlaceholder } from './OverlayIdlePlaceholder';
 import { ResizeHandles } from './ResizeHandles';
 
 /**
@@ -28,8 +29,10 @@ const FULL_OPACITY = 1;
  * (ADR-060 — one slider, one layer, no exemption logic) and renders chrome +
  * the live-view state machine (shared `live-content`, non-interactive) from
  * the same stores as the live page (spec AC 9/10). Fade regions are
- * siblings: the content slot fades with chrome while a fallback state
- * shows, and hands the fading over to `OverlayFrame`'s regions while the
+ * siblings: the content slot (the black idle placeholder, which stands in for
+ * the map) fades with the map slider while a non-map state shows — never
+ * chrome, or an activated overlay would vanish whenever chrome is kept low
+ * (ADR-062) — and hands the fading over to `OverlayFrame`'s regions while the
  * frame is mounted — a faded ancestor would cap the brighter regions (CSS
  * child opacity never exceeds its parent's, AC 5). The map and callout
  * variables are consumed inside the shared `MapView` (fallback 1 keeps the
@@ -53,26 +56,25 @@ export function OverlayRoot(): JSX.Element {
           keep working at 0 % opacity (design §6 case 5). */}
       <ResizeHandles />
       <OverlayChrome />
+      {/* The idle placeholder stands in for the map, so the content slot fades
+          with the map slider — never chrome (ADR-062). Chrome is routinely kept
+          low for a see-through title bar; coupling the placeholder to it made an
+          activated overlay vanish in the menu. While the frame is mounted it
+          owns its own per-region fades, so the slot opacity is lifted. */}
       <main
         data-testid="overlay-content"
-        className={
-          frameActive ? 'min-h-0 flex-1' : 'min-h-0 flex-1 rounded-md border bg-background'
-        }
-        style={frameActive ? undefined : { opacity: 'var(--fade-chrome)' }}
+        className="min-h-0 flex-1"
+        style={frameActive ? undefined : { opacity: 'var(--fade-map)' }}
       >
         {gameState === undefined ? (
-          <p
-            role="status"
-            className="flex h-full items-center justify-center text-muted-foreground"
-          >
-            Waiting for game state…
-          </p>
+          <OverlayIdlePlaceholder />
         ) : (
           <LiveContent
             status={gameState.status}
             map={gameState.map}
             interactive={false}
             renderMap={(mapId) => <OverlayFrame mapId={mapId} onActiveChange={setFrameActive} />}
+            fallback={<OverlayIdlePlaceholder />}
           />
         )}
       </main>

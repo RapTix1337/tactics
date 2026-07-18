@@ -231,4 +231,82 @@ describe('LiveContent', () => {
       expect(await screen.findByText(/no map is active/)).toBeInTheDocument();
     });
   });
+
+  // The overlay passes a fallback node so every non-map state renders one clean
+  // placeholder instead of the live page's diagnostics (live-overlay
+  // enhancement, ADR-062). The usable-map path must stay unaffected.
+  describe('fallback (overlay idle placeholder)', () => {
+    const fallback = <div data-testid="idle-fallback">idle</div>;
+
+    function renderWithFallback(map: GameStateMap): void {
+      render(
+        <LiveContent
+          status="connected"
+          map={map}
+          interactive={false}
+          renderMap={renderMapStub}
+          fallback={fallback}
+        />,
+      );
+    }
+
+    it('renders the fallback for the no-game state', async () => {
+      renderWithFallback({ kind: 'none' });
+
+      expect(await screen.findByTestId('idle-fallback')).toBeInTheDocument();
+      expect(screen.queryByText('No game detected')).not.toBeInTheDocument();
+    });
+
+    it('renders the fallback for an unsupported map', async () => {
+      renderWithFallback(unsupportedMap);
+
+      expect(await screen.findByTestId('idle-fallback')).toBeInTheDocument();
+      expect(screen.queryByText('Unsupported map')).not.toBeInTheDocument();
+    });
+
+    it('renders the fallback for a resolved map without a profile', async () => {
+      renderWithFallback(resolvedNuke);
+
+      expect(await screen.findByTestId('idle-fallback')).toBeInTheDocument();
+      expect(screen.queryByText(/has no radar image yet/)).not.toBeInTheDocument();
+    });
+
+    it('renders the fallback while the map list is loading', () => {
+      useMapCatalogStore.setState({ list: undefined, profilesById: {} });
+      vi.mocked(loadMapList)
+        .mockReset()
+        .mockImplementation(() => new Promise(() => {}));
+      renderWithFallback(resolvedDust2);
+
+      expect(screen.getByTestId('idle-fallback')).toBeInTheDocument();
+      expect(screen.queryByText('Loading maps…')).not.toBeInTheDocument();
+    });
+
+    it('renders the fallback for a map-list failure', async () => {
+      useMapCatalogStore.setState({ list: undefined, profilesById: {} });
+      vi.mocked(loadMapList)
+        .mockReset()
+        .mockResolvedValue(failure('DB_ERROR', 'The local database is unavailable.'));
+      renderWithFallback(resolvedDust2);
+
+      expect(await screen.findByTestId('idle-fallback')).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('renders the fallback for an out-of-sync resolved map', async () => {
+      renderWithFallback({ kind: 'resolved', mapId: 'de_inferno' });
+
+      expect(await screen.findByTestId('idle-fallback')).toBeInTheDocument();
+      expect(
+        screen.queryByText('The detected map is not in the loaded map list.'),
+      ).not.toBeInTheDocument();
+    });
+
+    it('still renders the map when the profile is usable', async () => {
+      renderWithFallback(resolvedDust2);
+
+      expect(await screen.findByTestId('rendered-map')).toHaveTextContent('de_dust2');
+      expect(screen.queryByTestId('idle-fallback')).not.toBeInTheDocument();
+    });
+  });
 });

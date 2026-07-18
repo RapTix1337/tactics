@@ -28,6 +28,13 @@ export interface LiveContentProps {
    * each window owns its own arrangement (scoreboard frame vs. overlay frame).
    */
   readonly renderMap: (mapId: string) => JSX.Element;
+  /**
+   * When set, every non-map state (no game, unsupported, catalog
+   * loading/error, upload-needed) renders this node instead of its diagnostic
+   * UI — the overlay's clean idle placeholder (live-overlay enhancement,
+   * ADR-062). Omitted on the main live page, which keeps its diagnostics.
+   */
+  readonly fallback?: JSX.Element;
 }
 
 export function LiveContent({
@@ -35,15 +42,21 @@ export function LiveContent({
   map,
   interactive,
   renderMap,
+  fallback,
 }: LiveContentProps): JSX.Element {
   switch (map.kind) {
     case 'resolved':
       return (
-        <ResolvedMapContent mapId={map.mapId} interactive={interactive} renderMap={renderMap} />
+        <ResolvedMapContent
+          mapId={map.mapId}
+          interactive={interactive}
+          renderMap={renderMap}
+          fallback={fallback}
+        />
       );
     case 'unsupported':
-      return <UnsupportedMapState rawName={map.rawName} interactive={interactive} />;
+      return fallback ?? <UnsupportedMapState rawName={map.rawName} interactive={interactive} />;
     case 'none':
-      return <NoGameState status={status} />;
+      return fallback ?? <NoGameState status={status} />;
   }
 }

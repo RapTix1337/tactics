@@ -79,48 +79,54 @@ describe('OverlayRoot', () => {
     setSettings({});
   });
 
-  describe('state matrix (mirrors the live page)', () => {
-    it('shows the waiting state with chrome before the first game-state slice', () => {
+  // Unlike the live page, every non-map overlay state collapses to one black
+  // idle placeholder (live-overlay enhancement, ADR-062) — the overlay never
+  // shows diagnostic text over the game.
+  describe('idle placeholder (all non-map states)', () => {
+    it('shows the placeholder with chrome before the first game-state slice', () => {
       render(<OverlayRoot />);
 
-      expect(screen.getByText('Waiting for game state…')).toBeInTheDocument();
+      expect(screen.getByTestId('overlay-idle-placeholder')).toBeInTheDocument();
+      expect(screen.getByText('Waiting for match…')).toBeInTheDocument();
+      expect(screen.queryByText('Waiting for game state…')).not.toBeInTheDocument();
       expect(screen.getByTestId('overlay-chrome')).toBeInTheDocument();
     });
 
-    it('shows the no-game diagnostics without a live map', () => {
+    it('shows the placeholder instead of the no-game diagnostics in the menu', () => {
       useGameStateStore.setState({
         gameState: { status: 'connected', map: { kind: 'none' } },
       });
 
       render(<OverlayRoot />);
 
-      expect(screen.getByText('No game detected')).toBeInTheDocument();
+      expect(screen.getByTestId('overlay-idle-placeholder')).toBeInTheDocument();
+      expect(screen.queryByText('No game detected')).not.toBeInTheDocument();
     });
 
-    it('shows the unsupported-map state without the repository button (non-interactive)', () => {
+    it('shows the placeholder instead of the unsupported-map state', () => {
       useGameStateStore.setState({
         gameState: { status: 'connected', map: { kind: 'unsupported', rawName: 'de_custom' } },
       });
 
       render(<OverlayRoot />);
 
-      expect(screen.getByText('Unsupported map')).toBeInTheDocument();
-      expect(
-        screen.queryByRole('button', { name: 'Open project repository' }),
-      ).not.toBeInTheDocument();
+      expect(screen.getByTestId('overlay-idle-placeholder')).toBeInTheDocument();
+      expect(screen.queryByText('Unsupported map')).not.toBeInTheDocument();
     });
 
-    it('shows the upload hint without the router link (non-interactive)', async () => {
+    it('shows the placeholder instead of the upload hint', async () => {
       useGameStateStore.setState({
         gameState: { status: 'connected', map: { kind: 'resolved', mapId: 'de_nuke' } },
       });
 
       render(<OverlayRoot />);
 
-      expect(await screen.findByText(/has no radar image yet/)).toBeInTheDocument();
-      expect(screen.queryByRole('link')).not.toBeInTheDocument();
+      expect(await screen.findByTestId('overlay-idle-placeholder')).toBeInTheDocument();
+      expect(screen.queryByText(/has no radar image yet/)).not.toBeInTheDocument();
     });
+  });
 
+  describe('resolved map', () => {
     it('renders the overlay frame for a resolved map with a profile', async () => {
       useGameStateStore.setState({ gameState: liveOnDust2 });
       useScoreboardStore.setState({ scoreboard: SAMPLE_SCOREBOARD_STATE });
@@ -193,11 +199,15 @@ describe('OverlayRoot', () => {
   });
 
   describe('slot fade hand-over (sibling-region invariant)', () => {
-    it('fades the content slot with the chrome variable while a fallback state shows', () => {
+    // The idle placeholder stands in for the map, so it follows the map slider
+    // — not chrome (ADR-062). Chrome is kept low for see-through title bars;
+    // coupling the placeholder to it made an activated overlay vanish in the
+    // menu (the reported bug).
+    it('fades the idle placeholder with the map variable, not chrome', () => {
       render(<OverlayRoot />);
 
       expect(screen.getByTestId('overlay-content')).toHaveStyle({
-        opacity: 'var(--fade-chrome)',
+        opacity: 'var(--fade-map)',
       });
     });
 
@@ -222,7 +232,7 @@ describe('OverlayRoot', () => {
       });
 
       expect(screen.getByTestId('overlay-content')).toHaveStyle({
-        opacity: 'var(--fade-chrome)',
+        opacity: 'var(--fade-map)',
       });
     });
   });

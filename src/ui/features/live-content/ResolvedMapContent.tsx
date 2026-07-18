@@ -17,6 +17,13 @@ interface ResolvedMapContentProps {
   readonly mapId: string;
   readonly interactive: boolean;
   readonly renderMap: (mapId: string) => JSX.Element;
+  /**
+   * When set, every pre-map state (list loading/failure, out of sync,
+   * upload-needed) renders this node instead of its diagnostic UI — the
+   * overlay's idle placeholder (live-overlay enhancement, ADR-062). The usable
+   * profile still reaches `renderMap`.
+   */
+  readonly fallback?: JSX.Element;
 }
 
 /**
@@ -29,6 +36,7 @@ export function ResolvedMapContent({
   mapId,
   interactive,
   renderMap,
+  fallback,
 }: ResolvedMapContentProps): JSX.Element {
   const map = useMapCatalogStore((state) => state.list?.find((entry) => entry.id === mapId));
   const listLoaded = useMapCatalogStore((state) => state.list !== undefined);
@@ -55,57 +63,65 @@ export function ResolvedMapContent({
       // A resolved mapId always names a catalog map (main resolved it); a
       // fetched list without it means the renderer's list is out of sync.
       return (
-        <p
-          role="alert"
-          className="flex h-full items-center justify-center text-sm text-destructive"
-        >
-          The detected map is not in the loaded map list.
-        </p>
+        fallback ?? (
+          <p
+            role="alert"
+            className="flex h-full items-center justify-center text-sm text-destructive"
+          >
+            The detected map is not in the loaded map list.
+          </p>
+        )
       );
     }
     const failure = listFailure?.request === listRequest ? listFailure : undefined;
     if (failure !== undefined) {
       return (
-        <div role="alert" className="flex h-full flex-col items-center justify-center gap-2">
-          <p className="text-sm text-destructive">
-            The map list could not be loaded: {failure.message}
-          </p>
-          {interactive && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setListRequest((request) => request + 1);
-              }}
-            >
-              Try again
-            </Button>
-          )}
-        </div>
+        fallback ?? (
+          <div role="alert" className="flex h-full flex-col items-center justify-center gap-2">
+            <p className="text-sm text-destructive">
+              The map list could not be loaded: {failure.message}
+            </p>
+            {interactive && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setListRequest((request) => request + 1);
+                }}
+              >
+                Try again
+              </Button>
+            )}
+          </div>
+        )
       );
     }
     return (
-      <p role="status" className="flex h-full items-center justify-center text-muted-foreground">
-        Loading maps…
-      </p>
+      fallback ?? (
+        <p role="status" className="flex h-full items-center justify-center text-muted-foreground">
+          Loading maps…
+        </p>
+      )
     );
   }
   if (map.profiles.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
-        <p className="font-medium">You are playing {map.displayName}</p>
-        <p className="max-w-md text-sm text-muted-foreground">
-          {map.displayName} has no radar image yet, so there is nothing to show in live mode. Upload
-          one to see the map with its callouts here.
-        </p>
-        {interactive && (
-          <Button asChild className="mt-2">
-            <Link to="/maps/$mapId" params={{ mapId }}>
-              Upload image…
-            </Link>
-          </Button>
-        )}
-      </div>
+      fallback ?? (
+        <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
+          <p className="font-medium">You are playing {map.displayName}</p>
+          <p className="max-w-md text-sm text-muted-foreground">
+            {map.displayName} has no radar image yet, so there is nothing to show in live mode.
+            Upload one to see the map with its callouts here.
+          </p>
+          {interactive && (
+            <Button asChild className="mt-2">
+              <Link to="/maps/$mapId" params={{ mapId }}>
+                Upload image…
+              </Link>
+            </Button>
+          )}
+        </div>
+      )
     );
   }
   return renderMap(mapId);
